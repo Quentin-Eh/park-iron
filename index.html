@@ -68,6 +68,7 @@ button{font-family:inherit}
 /* Overlay */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
   display:flex;align-items:flex-end;justify-content:center}
+.overlay-center{align-items:center}
 .drawer{background:#1a1a2e;border-radius:20px 20px 0 0;padding:24px 20px calc(40px + env(safe-area-inset-bottom,0));
   width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
 .drawer-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin:0 auto 20px}
@@ -88,6 +89,14 @@ button{font-family:inherit}
 .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#4ECDC4;color:#0d0d1a;
   padding:10px 20px;border-radius:12px;font-weight:700;font-size:13px;z-index:200;
   animation:fadeIn .3s ease,fadeIn .3s ease 2s reverse both}
+
+/* Progression item */
+.prog-item{display:flex;align-items:center;gap:12px;padding:12px 0;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.prog-item:active{opacity:.7}
+
+/* Resume modal */
+.resume-modal{background:#1a1a2e;border-radius:20px;padding:28px 24px;width:calc(100% - 40px);max-width:400px}
 </style>
 </head>
 <body>
@@ -100,100 +109,219 @@ button{font-family:inherit}
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-// ──── Storage helper (localStorage) ────
-const Storage = {
-  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
-  del(k) { try { localStorage.removeItem(k); } catch {} },
+// ════════════════════════════════════════════════════════════════
+// PROGRAM SCHEMA (v1)
+// This structure is the contract between program generation (AI)
+// and the renderer. The app renders any valid program schema.
+// ════════════════════════════════════════════════════════════════
+
+const SCHEMA_VERSION = 1;
+
+const DEFAULT_PROGRAM = {
+  schemaVersion: SCHEMA_VERSION,
+  version: "1.0.0",
+  name: "Park Iron — Calisthenics Hypertrophy",
+  description: "3-day full body, antagonist supersets, 35-45 min",
+  days: {
+    A: {
+      name: "Day A", subtitle: "Push Emphasis + Pull Maintenance", color: "#FF6B35",
+      sections: [
+        { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
+          { id:"ring_dips_a", name:"Ring Dips", detail:"3s down, 1s up", target:"6-12",
+            progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause at bottom","Weighted ring dips (backpack)"] },
+          { id:"pullups_a", name:"Pull-ups", detail:"Wide grip, bar", target:"6-12",
+            progression:["Wide grip pull-ups","Slow tempo (4s down)","Archer pull-ups (partial)","Archer pull-ups (full)","One-arm negatives"] },
+        ]},
+        { type:"superset", label:"Superset 2", rounds:3, rest:60, exercises:[
+          { id:"archer_pushups", name:"Archer Push-ups", detail:"Parallettes (or diamond if needed)", target:"6-12",
+            progression:["Diamond push-ups","Archer push-ups (partial)","Archer push-ups (full)","One-arm negatives"] },
+          { id:"ring_rows", name:"Ring Rows", detail:"Feet elevated if possible", target:"6-12",
+            progression:["Ring rows (feet on ground)","Ring rows (feet elevated)","Ring rows (slow 4s eccentric)","Front lever rows (tuck)"] },
+        ]},
+        { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
+          { id:"pike_pushups", name:"Pike Push-ups", detail:"Feet elevated on bar", target:"8-15",
+            progression:["Pike push-ups (feet on ground)","Pike push-ups (feet elevated)","Wall HSPU negatives","Wall HSPU"] },
+          { id:"face_pulls", name:"Ring Face Pulls", detail:"Squeeze rear delts", target:"8-15",
+            progression:["Ring face pulls (upright)","Ring face pulls (more horizontal)","Ring face pulls (slow eccentric)"] },
+        ]},
+        { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
+          { id:"pistols_a", name:"Pistol Squats", detail:"Full depth, each leg", target:"6-8/leg",
+            progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
+        ]},
+      ],
+    },
+    B: {
+      name: "Day B", subtitle: "Pull Emphasis + Push Maintenance", color: "#4ECDC4",
+      sections: [
+        { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
+          { id:"chinups", name:"Chin-ups", detail:"Palms facing you — biceps focus", target:"6-12",
+            progression:["Chin-ups (bodyweight)","Chin-ups (slow 4s eccentric)","Weighted chin-ups","One-arm chin-up negatives"] },
+          { id:"ring_dips_b", name:"Ring Dips", detail:"Maintenance volume", target:"6-12",
+            progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause","Weighted ring dips"] },
+        ]},
+        { type:"superset", label:"Superset 2", rounds:3, rest:90, exercises:[
+          { id:"archer_pullups", name:"Archer Pull-ups", detail:"Or slow-tempo pull-ups if not ready", target:"4-8",
+            progression:["Slow tempo pull-ups (5s down)","Archer pull-ups (partial shift)","Archer pull-ups (full)","One-arm negatives (5s+)"] },
+          { id:"deep_pushups", name:"Deep Push-ups", detail:"Parallettes, full ROM", target:"8-12",
+            progression:["Deep push-ups (parallettes)","Deep push-ups (slow 3s eccentric)","Deficit push-ups (elevated hands)","Pseudo-planche push-ups"] },
+        ]},
+        { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
+          { id:"ring_curls", name:"Ring Curls", detail:"Supinated grip, elbows fixed", target:"8-12",
+            progression:["Ring curls (upright)","Ring curls (more horizontal)","Ring curls (slow eccentric)"] },
+          { id:"leg_raises", name:"Hanging Leg Raises", detail:"Straight legs, to L or V", target:"8-12",
+            progression:["Knee raises","L-raise (straight legs to L)","V-raise (legs to bar)","Toes to bar (slow)"] },
+        ]},
+        { type:"straight", label:"Legs", rounds:3, rest:90, exercises:[
+          { id:"bulgarians", name:"Bulgarian Split Squats", detail:"Rear foot on parallette", target:"8-10/leg",
+            progression:["Bulgarian split squats","Slow eccentric (4s)","Weighted (backpack)"] },
+        ]},
+      ],
+    },
+    C: {
+      name: "Day C", subtitle: "Legs + Core + Skill", color: "#A855F7",
+      sections: [
+        { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
+          { id:"pistols_c", name:"Pistol Squats", detail:"Max quality reps per leg", target:"max/leg",
+            progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
+        ]},
+        { type:"straight", label:"Posterior Chain", rounds:3, rest:120, exercises:[
+          { id:"nordics", name:"Nordic Curl Negatives", detail:"Lower as slowly as possible", target:"4-6",
+            progression:["Nordic negatives (with bar assist)","Nordic negatives (less assist)","Nordic negatives (no assist)","Full Nordic curls"] },
+        ]},
+        { type:"straight", label:"Power", rounds:3, rest:90, exercises:[
+          { id:"jump_squats", name:"Jump Squats", detail:"Explosive, full recovery", target:"8",
+            progression:["Jump squats","Jump squats (deeper)","Weighted jump squats"] },
+        ]},
+        { type:"straight", label:"Core & Skills", rounds:3, rest:60, exercises:[
+          { id:"vsit", name:"V-sit Hold", detail:"Max hold", target:"15-20s", isHold:true,
+            progression:["L-sit (30s+)","V-sit (building to 20s)","V-sit (20s+)"] },
+          { id:"planche_lean", name:"Pseudo-planche Lean", detail:"On parallettes, lean forward", target:"15-20s", isHold:true,
+            progression:["Slight lean","Moderate lean (shoulders past wrists)","Deep lean","Tuck planche attempts"] },
+          { id:"ring_support", name:"Ring Support Hold", detail:"Arms turned out (RTO)", target:"20-30s", isHold:true,
+            progression:["Ring support (neutral)","Ring support (turned out 45°)","Ring support (full RTO)","Ring support + lean forward"] },
+        ]},
+      ],
+    },
+  },
 };
 
-// ──── Program Data ────
-const PROGRAM = {
-  A: {
-    name: "Day A", subtitle: "Push Emphasis + Pull Maintenance", color: "#FF6B35",
-    sections: [
-      { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
-        { id:"ring_dips_a", name:"Ring Dips", detail:"3s down, 1s up", target:"6-12",
-          progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause at bottom","Weighted ring dips (backpack)"] },
-        { id:"pullups_a", name:"Pull-ups", detail:"Wide grip, bar", target:"6-12",
-          progression:["Wide grip pull-ups","Slow tempo (4s down)","Archer pull-ups (partial)","Archer pull-ups (full)","One-arm negatives"] },
-      ]},
-      { type:"superset", label:"Superset 2", rounds:3, rest:60, exercises:[
-        { id:"archer_pushups", name:"Archer Push-ups", detail:"Parallettes (or diamond if needed)", target:"6-12",
-          progression:["Diamond push-ups","Archer push-ups (partial)","Archer push-ups (full)","One-arm negatives"] },
-        { id:"ring_rows", name:"Ring Rows", detail:"Feet elevated if possible", target:"6-12",
-          progression:["Ring rows (feet on ground)","Ring rows (feet elevated)","Ring rows (slow 4s eccentric)","Front lever rows (tuck)"] },
-      ]},
-      { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
-        { id:"pike_pushups", name:"Pike Push-ups", detail:"Feet elevated on bar", target:"8-15",
-          progression:["Pike push-ups (feet on ground)","Pike push-ups (feet elevated)","Wall HSPU negatives","Wall HSPU"] },
-        { id:"face_pulls", name:"Ring Face Pulls", detail:"Squeeze rear delts", target:"8-15",
-          progression:["Ring face pulls (upright)","Ring face pulls (more horizontal)","Ring face pulls (slow eccentric)"] },
-      ]},
-      { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
-        { id:"pistols_a", name:"Pistol Squats", detail:"Full depth, each leg", target:"6-8/leg",
-          progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
-      ]},
-    ],
+// ════════════════════════════════════════════════════════════════
+// DATASTORE
+// Abstraction over localStorage. Same interface works with cloud.
+// Separate keys: sessions, draft, progressions, program
+// ════════════════════════════════════════════════════════════════
+
+const DataStore = {
+  _get(key) { try { return JSON.parse(localStorage.getItem(`pi-${key}`)); } catch { return null; } },
+  _set(key, val) { try { localStorage.setItem(`pi-${key}`, JSON.stringify(val)); } catch {} },
+  _del(key) { try { localStorage.removeItem(`pi-${key}`); } catch {} },
+
+  // Sessions (completed workouts)
+  getSessions()   { return this._get('sessions') || []; },
+  saveSessions(s) { this._set('sessions', s); },
+
+  // Draft (in-progress session, auto-saved)
+  getDraft()      { return this._get('draft'); },
+  saveDraft(d)    { this._set('draft', { ...d, savedAt: new Date().toISOString() }); },
+  clearDraft()    { this._del('draft'); },
+
+  // Progressions ({ exerciseId: levelIndex })
+  getProgressions()   { return this._get('progressions') || {}; },
+  saveProgressions(p) { this._set('progressions', p); },
+
+  // Program (the full program schema)
+  getProgram()   { return this._get('program') || DEFAULT_PROGRAM; },
+  saveProgram(p) { this._set('program', p); },
+
+  // Schema version for future migrations
+  getVersion()   { return this._get('version') || 0; },
+  setVersion(v)  { this._set('version', v); },
+
+  // Export everything as a single backup blob
+  exportAll() {
+    return {
+      exportVersion: 1,
+      exportDate: new Date().toISOString(),
+      sessions: this.getSessions(),
+      progressions: this.getProgressions(),
+      program: this.getProgram(),
+    };
   },
-  B: {
-    name: "Day B", subtitle: "Pull Emphasis + Push Maintenance", color: "#4ECDC4",
-    sections: [
-      { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
-        { id:"chinups", name:"Chin-ups", detail:"Palms facing you — biceps focus", target:"6-12",
-          progression:["Chin-ups (bodyweight)","Chin-ups (slow 4s eccentric)","Weighted chin-ups","One-arm chin-up negatives"] },
-        { id:"ring_dips_b", name:"Ring Dips", detail:"Maintenance volume", target:"6-12",
-          progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause","Weighted ring dips"] },
-      ]},
-      { type:"superset", label:"Superset 2", rounds:3, rest:90, exercises:[
-        { id:"archer_pullups", name:"Archer Pull-ups", detail:"Or slow-tempo pull-ups if not ready", target:"4-8",
-          progression:["Slow tempo pull-ups (5s down)","Archer pull-ups (partial shift)","Archer pull-ups (full)","One-arm negatives (5s+)"] },
-        { id:"deep_pushups", name:"Deep Push-ups", detail:"Parallettes, full ROM", target:"8-12",
-          progression:["Deep push-ups (parallettes)","Deep push-ups (slow 3s eccentric)","Deficit push-ups (elevated hands)","Pseudo-planche push-ups"] },
-      ]},
-      { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
-        { id:"ring_curls", name:"Ring Curls", detail:"Supinated grip, elbows fixed", target:"8-12",
-          progression:["Ring curls (upright)","Ring curls (more horizontal)","Ring curls (slow eccentric)"] },
-        { id:"leg_raises", name:"Hanging Leg Raises", detail:"Straight legs, to L or V", target:"8-12",
-          progression:["Knee raises","L-raise (straight legs to L)","V-raise (legs to bar)","Toes to bar (slow)"] },
-      ]},
-      { type:"straight", label:"Legs", rounds:3, rest:90, exercises:[
-        { id:"bulgarians", name:"Bulgarian Split Squats", detail:"Rear foot on parallette", target:"8-10/leg",
-          progression:["Bulgarian split squats","Slow eccentric (4s)","Weighted (backpack)"] },
-      ]},
-    ],
+
+  // Import from backup blob — merges or replaces
+  importAll(blob) {
+    if (!blob || typeof blob !== 'object') throw new Error('Invalid backup');
+    // Support both old format (raw array) and new export format
+    if (Array.isArray(blob)) {
+      // Old-style export: just a sessions array
+      this.saveSessions(blob);
+      return;
+    }
+    if (blob.exportVersion) {
+      if (blob.sessions) this.saveSessions(blob.sessions);
+      if (blob.progressions) this.saveProgressions(blob.progressions);
+      if (blob.program) this.saveProgram(blob.program);
+      return;
+    }
+    throw new Error('Unrecognized backup format');
   },
-  C: {
-    name: "Day C", subtitle: "Legs + Core + Skill", color: "#A855F7",
-    sections: [
-      { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
-        { id:"pistols_c", name:"Pistol Squats", detail:"Max quality reps per leg", target:"max/leg",
-          progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
-      ]},
-      { type:"straight", label:"Posterior Chain", rounds:3, rest:120, exercises:[
-        { id:"nordics", name:"Nordic Curl Negatives", detail:"Lower as slowly as possible", target:"4-6",
-          progression:["Nordic negatives (with bar assist)","Nordic negatives (less assist)","Nordic negatives (no assist)","Full Nordic curls"] },
-      ]},
-      { type:"straight", label:"Power", rounds:3, rest:90, exercises:[
-        { id:"jump_squats", name:"Jump Squats", detail:"Explosive, full recovery", target:"8",
-          progression:["Jump squats","Jump squats (deeper)","Weighted jump squats"] },
-      ]},
-      { type:"straight", label:"Core & Skills", rounds:3, rest:60, exercises:[
-        { id:"vsit", name:"V-sit Hold", detail:"Max hold", target:"15-20s", isHold:true,
-          progression:["L-sit (30s+)","V-sit (building to 20s)","V-sit (20s+)"] },
-        { id:"planche_lean", name:"Pseudo-planche Lean", detail:"On parallettes, lean forward", target:"15-20s", isHold:true,
-          progression:["Slight lean","Moderate lean (shoulders past wrists)","Deep lean","Tuck planche attempts"] },
-        { id:"ring_support", name:"Ring Support Hold", detail:"Arms turned out (RTO)", target:"20-30s", isHold:true,
-          progression:["Ring support (neutral)","Ring support (turned out 45°)","Ring support (full RTO)","Ring support + lean forward"] },
-      ]},
-    ],
+
+  // Migrate from legacy pi-history format
+  migrate() {
+    const currentVersion = this.getVersion();
+    if (currentVersion >= 1) return; // already migrated
+
+    // Migrate old pi-history → new sessions key
+    try {
+      const raw = localStorage.getItem('pi-history');
+      if (raw) {
+        const oldHistory = JSON.parse(raw);
+        if (Array.isArray(oldHistory) && oldHistory.length > 0) {
+          // Only migrate if we don't already have sessions
+          const existing = this.getSessions();
+          if (existing.length === 0) {
+            this.saveSessions(oldHistory);
+          }
+        }
+      }
+    } catch {}
+
+    // Save default program
+    if (!this._get('program')) {
+      this.saveProgram(DEFAULT_PROGRAM);
+    }
+
+    this.setVersion(1);
   },
 };
+
+// Run migration on load
+DataStore.migrate();
+
+// ════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════
 
 const fmt = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
 const fmtDate = iso => new Date(iso).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
 
-// ──── Timer ────
+// Look up exercise name from program (for history display)
+function findExerciseName(program, dayKey, exId) {
+  const day = program.days[dayKey];
+  if (!day) return exId;
+  for (const sec of day.sections) {
+    for (const ex of sec.exercises) {
+      if (ex.id === exId) return ex.name;
+    }
+  }
+  return exId;
+}
+
+// ════════════════════════════════════════════════════════════════
+// COMPONENTS
+// ════════════════════════════════════════════════════════════════
+
+// ──── Rest Timer ────
 function RestTimer({ duration, onComplete }) {
   const [rem, setRem] = useState(duration);
   const [on, setOn] = useState(false);
@@ -260,12 +388,11 @@ function RestTimer({ duration, onComplete }) {
   );
 }
 
-// ──── Hold Timer (for isometric exercises) ────
+// ──── Hold Timer (isometric exercises) ────
 function HoldTimer() {
   const [elapsed, setElapsed] = useState(0);
   const [on, setOn] = useState(false);
   const iv = useRef(null);
-  const ctx = useRef(null);
 
   useEffect(() => {
     if (on) {
@@ -306,30 +433,33 @@ function RepInput({ value, onChange, label }) {
   );
 }
 
-// ──── Progression Drawer ────
-function ProgressionDrawer({ exercise, onClose }) {
+// ──── Progression Drawer (interactive) ────
+function ProgressionDrawer({ exercise, currentLevel, onSelectLevel, onClose }) {
   if (!exercise) return null;
   return (
     <div className="overlay" onClick={onClose}>
       <div className="drawer slide-up" onClick={e=>e.stopPropagation()}>
         <div className="drawer-handle"/>
         <h3 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{exercise.name}</h3>
-        <p style={{color:'rgba(255,255,255,.4)',fontSize:13,marginBottom:20}}>Progression Ladder</p>
-        {exercise.progression.map((step,i) => (
-          <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',
-            borderBottom:i<exercise.progression.length-1?'1px solid rgba(255,255,255,.06)':'none'}}>
-            <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',
-              justifyContent:'center',flexShrink:0,fontSize:12,fontWeight:700,
-              background:i===0?'rgba(78,205,196,.2)':'rgba(255,255,255,.05)',
-              color:i===0?'#4ECDC4':'rgba(255,255,255,.3)'}}>
-              {i+1}
+        <p style={{color:'rgba(255,255,255,.4)',fontSize:13,marginBottom:20}}>Tap to set your current level</p>
+        {exercise.progression.map((step,i) => {
+          const isCurrent = i === currentLevel;
+          return (
+            <div key={i} className="prog-item" onClick={() => onSelectLevel(i)}
+              style={{borderBottom:i<exercise.progression.length-1?'1px solid rgba(255,255,255,.06)':'none'}}>
+              <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',
+                justifyContent:'center',flexShrink:0,fontSize:12,fontWeight:700,
+                background:isCurrent?'rgba(78,205,196,.2)':'rgba(255,255,255,.05)',
+                color:isCurrent?'#4ECDC4':'rgba(255,255,255,.3)'}}>
+                {i+1}
+              </div>
+              <span style={{color:isCurrent?'#fff':'rgba(255,255,255,.5)',fontSize:14,
+                fontWeight:isCurrent?600:400,flex:1}}>{step}</span>
+              {isCurrent && <span style={{background:'rgba(78,205,196,.15)',color:'#4ECDC4',
+                fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:6,letterSpacing:.5}}>CURRENT</span>}
             </div>
-            <span style={{color:i===0?'#fff':'rgba(255,255,255,.5)',fontSize:14,
-              fontWeight:i===0?600:400}}>{step}</span>
-            {i===0 && <span style={{marginLeft:'auto',background:'rgba(78,205,196,.15)',color:'#4ECDC4',
-              fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:6,letterSpacing:.5}}>START</span>}
-          </div>
-        ))}
+          );
+        })}
         <p style={{marginTop:20,color:'rgba(255,255,255,.35)',fontSize:12,lineHeight:1.5}}>
           Progress when you hit the top of your rep range on all sets for 2 sessions in a row.
         </p>
@@ -339,12 +469,14 @@ function ProgressionDrawer({ exercise, onClose }) {
 }
 
 // ──── Exercise Card ────
-function ExerciseCard({ exercise, totalRounds, reps, onRepsChange, dayColor }) {
+function ExerciseCard({ exercise, totalRounds, reps, onRepsChange, dayColor, progressionLevel, onProgressionChange }) {
   const [showProg, setShowProg] = useState(false);
+  const currentVariant = exercise.progression[progressionLevel] || exercise.progression[0];
+
   return (
     <>
       <div className="ex-card">
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
           <div>
             <h4 style={{fontSize:16,fontWeight:700}}>{exercise.name}</h4>
             <p style={{color:'rgba(255,255,255,.4)',fontSize:12,marginTop:2}}>{exercise.detail}</p>
@@ -354,11 +486,19 @@ function ExerciseCard({ exercise, totalRounds, reps, onRepsChange, dayColor }) {
             ↑ Prog
           </button>
         </div>
-        <div style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:12,
-          background:`${dayColor}15`,borderRadius:8,padding:'4px 10px'}}>
-          <span style={{fontSize:11,color:dayColor,fontWeight:600}}>
-            Target: {exercise.target} {exercise.isHold?'':'reps'}
-          </span>
+        <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:6,
+            background:`${dayColor}15`,borderRadius:8,padding:'4px 10px'}}>
+            <span style={{fontSize:11,color:dayColor,fontWeight:600}}>
+              Target: {exercise.target} {exercise.isHold?'':'reps'}
+            </span>
+          </div>
+          <div style={{display:'inline-flex',alignItems:'center',gap:4,
+            background:'rgba(78,205,196,.08)',borderRadius:8,padding:'4px 10px'}}>
+            <span style={{fontSize:11,color:'#4ECDC4',fontWeight:500}}>
+              {currentVariant}
+            </span>
+          </div>
         </div>
         {exercise.isHold ? (
           <div>
@@ -380,57 +520,191 @@ function ExerciseCard({ exercise, totalRounds, reps, onRepsChange, dayColor }) {
           </div>
         )}
       </div>
-      {showProg && <ProgressionDrawer exercise={exercise} onClose={()=>setShowProg(false)}/>}
+      {showProg && <ProgressionDrawer exercise={exercise} currentLevel={progressionLevel}
+        onSelectLevel={(lvl) => { onProgressionChange(lvl); }}
+        onClose={()=>setShowProg(false)}/>}
     </>
   );
 }
 
-// ──── Main App ────
+// ──── Resume Prompt ────
+function ResumePrompt({ draft, program, onResume, onDiscard }) {
+  const day = program.days[draft.day];
+  if (!day) { onDiscard(); return null; }
+  const elapsed = Math.round((new Date(draft.savedAt).getTime() - new Date(draft.start).getTime()) / 60000);
+  const repsLogged = Object.values(draft.data || {}).reduce((a,r) => a + r.reduce((b,v) => b+v, 0), 0);
+
+  return (
+    <div className="overlay overlay-center" onClick={onDiscard}>
+      <div className="resume-modal slide-up" onClick={e=>e.stopPropagation()}>
+        <h3 style={{fontSize:18,fontWeight:700,marginBottom:8}}>Resume session?</h3>
+        <p style={{color:'rgba(255,255,255,.4)',fontSize:13,marginBottom:20,lineHeight:1.5}}>
+          You have an unfinished <strong style={{color:day.color}}>{day.name}</strong> session.
+        </p>
+        <div style={{display:'flex',gap:12,marginBottom:20}}>
+          <div style={{flex:1,background:'rgba(255,255,255,.04)',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,fontWeight:700}}>{repsLogged}</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.3)'}}>reps logged</div>
+          </div>
+          <div style={{flex:1,background:'rgba(255,255,255,.04)',borderRadius:10,padding:'10px 12px',textAlign:'center'}}>
+            <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,fontWeight:700}}>{elapsed}m</div>
+            <div style={{fontSize:11,color:'rgba(255,255,255,.3)'}}>elapsed</div>
+          </div>
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          <button onClick={onDiscard} style={{flex:1,padding:14,borderRadius:12,border:'1px solid rgba(255,255,255,.1)',
+            background:'transparent',color:'rgba(255,255,255,.5)',fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            Discard
+          </button>
+          <button onClick={onResume} style={{flex:1,padding:14,borderRadius:12,border:'none',
+            background:`linear-gradient(135deg,${day.color},${day.color}aa)`,
+            color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer'}}>
+            Resume
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// MAIN APP
+// ════════════════════════════════════════════════════════════════
+
 function App() {
   const [screen, setScreen] = useState('home');
   const [activeDay, setActiveDay] = useState(null);
   const [sessionData, setSessionData] = useState({});
   const [sessionStart, setSessionStart] = useState(null);
-  const [history, setHistory] = useState(() => Storage.get('pi-history') || []);
+  const [history, setHistory] = useState(() => DataStore.getSessions());
+  const [progressions, setProgressions] = useState(() => DataStore.getProgressions());
+  const [program] = useState(() => DataStore.getProgram());
   const [toast, setToast] = useState(null);
+  const [pendingDraft, setPendingDraft] = useState(() => {
+    const draft = DataStore.getDraft();
+    if (!draft) return null;
+    // Expire drafts older than 24 hours
+    const age = Date.now() - new Date(draft.savedAt).getTime();
+    if (age > 24 * 60 * 60 * 1000) { DataStore.clearDraft(); return null; }
+    return draft;
+  });
+  const importRef = useRef(null);
 
   const showToast = msg => { setToast(msg); setTimeout(()=>setToast(null),2500); };
 
+  // ── Auto-save draft (debounced 2s) ──
+  useEffect(() => {
+    if (screen !== 'session' || !activeDay) return;
+    const timer = setTimeout(() => {
+      DataStore.saveDraft({
+        day: activeDay,
+        data: sessionData,
+        start: sessionStart,
+      });
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [screen, activeDay, sessionData, sessionStart]);
+
+  // ── Session management ──
   const startSession = day => {
-    setActiveDay(day); setSessionData({}); setSessionStart(new Date().toISOString()); setScreen('session');
+    setActiveDay(day);
+    setSessionData({});
+    setSessionStart(new Date().toISOString());
+    DataStore.clearDraft();
+    setScreen('session');
+  };
+
+  const resumeSession = () => {
+    if (!pendingDraft) return;
+    setActiveDay(pendingDraft.day);
+    setSessionData(pendingDraft.data || {});
+    setSessionStart(pendingDraft.start);
+    setPendingDraft(null);
+    setScreen('session');
+  };
+
+  const discardDraft = () => {
+    DataStore.clearDraft();
+    setPendingDraft(null);
   };
 
   const getReps = (id, rounds) => sessionData[id] || new Array(rounds).fill(0);
   const setReps = (id, r) => setSessionData(d => ({...d, [id]:r}));
 
+  const getProgLevel = (exId) => progressions[exId] || 0;
+  const setProgLevel = (exId, level) => {
+    const next = { ...progressions, [exId]: level };
+    setProgressions(next);
+    DataStore.saveProgressions(next);
+  };
+
   const finishSession = () => {
-    const entry = { id:Date.now(), day:activeDay, date:sessionStart, endDate:new Date().toISOString(), exercises:sessionData };
-    const h = [entry,...history];
-    setHistory(h); Storage.set('pi-history',h);
-    setScreen('home'); setActiveDay(null);
+    const entry = {
+      id: Date.now(),
+      day: activeDay,
+      date: sessionStart,
+      endDate: new Date().toISOString(),
+      exercises: sessionData,
+      progressions: { ...progressions }, // snapshot at time of session
+    };
+    const h = [entry, ...history];
+    setHistory(h);
+    DataStore.saveSessions(h);
+    DataStore.clearDraft();
+    setScreen('home');
+    setActiveDay(null);
     showToast('Session saved!');
   };
 
-  const exportJSON = () => {
-    const b = new Blob([JSON.stringify(history,null,2)],{type:'application/json'});
+  // ── Export / Import ──
+  const exportAll = () => {
+    const blob = DataStore.exportAll();
+    const b = new Blob([JSON.stringify(blob, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
-    a.download = `park-iron-log-${new Date().toISOString().slice(0,10)}.json`;
-    a.click(); URL.revokeObjectURL(a.href);
-    showToast('Log exported!');
+    a.download = `park-iron-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast('Backup exported!');
+  };
+
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const blob = JSON.parse(ev.target.result);
+        DataStore.importAll(blob);
+        setHistory(DataStore.getSessions());
+        setProgressions(DataStore.getProgressions());
+        showToast('Data restored!');
+      } catch (err) {
+        showToast('Import failed — invalid file');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so the same file can be re-selected
+    e.target.value = '';
   };
 
   const clearHistory = () => {
     if (confirm('Delete all session history? Cannot be undone.')) {
-      setHistory([]); Storage.del('pi-history'); showToast('History cleared');
+      setHistory([]);
+      DataStore.saveSessions([]);
+      showToast('History cleared');
     }
   };
 
-  const day = activeDay ? PROGRAM[activeDay] : null;
+  const day = activeDay ? program.days[activeDay] : null;
 
   return (
     <div>
       {toast && <div className="toast">{toast}</div>}
+      {pendingDraft && screen === 'home' && (
+        <ResumePrompt draft={pendingDraft} program={program}
+          onResume={resumeSession} onDiscard={discardDraft}/>
+      )}
 
       {/* ──── HOME ──── */}
       {screen === 'home' && (
@@ -447,7 +721,7 @@ function App() {
           </div>
 
           <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:28}}>
-            {Object.entries(PROGRAM).map(([k,d]) => {
+            {Object.entries(program.days).map(([k,d]) => {
               const last = history.find(h=>h.day===k);
               return (
                 <button key={k} className="day-card" onClick={()=>startSession(k)}
@@ -491,7 +765,7 @@ function App() {
         <div style={{padding:'16px'}} className="fade-in">
           <div className="sticky-hdr">
             <button className="btn-icon" onClick={() => {
-              if (confirm('End session without saving?')) setScreen('home');
+              if (confirm('End session without saving?')) { setScreen('home'); }
             }}>←</button>
             <div>
               <h2 style={{fontSize:20,fontWeight:800,color:day.color}}>{day.name}</h2>
@@ -500,7 +774,7 @@ function App() {
           </div>
 
           {day.sections.map((sec,si) => (
-            <div key={si} style={{marginBottom:28}} className="fade-in" style={{animationDelay:`${si*80}ms`}}>
+            <div key={si} className="fade-in" style={{marginBottom:28,animationDelay:`${si*80}ms`}}>
               <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,marginTop:si?0:16}}>
                 <span className="sec-label" style={{color:day.color}}>{sec.label}</span>
                 <span className="sec-meta">
@@ -512,7 +786,9 @@ function App() {
                 <div key={ex.id} style={{marginBottom:12}}>
                   <ExerciseCard exercise={ex} totalRounds={sec.rounds}
                     reps={getReps(ex.id,sec.rounds)} onRepsChange={r=>setReps(ex.id,r)}
-                    dayColor={day.color}/>
+                    dayColor={day.color}
+                    progressionLevel={getProgLevel(ex.id)}
+                    onProgressionChange={lvl=>setProgLevel(ex.id,lvl)}/>
                 </div>
               ))}
 
@@ -544,10 +820,16 @@ function App() {
           </div>
 
           <div style={{display:'flex',gap:8,marginBottom:20}}>
-            <button onClick={exportJSON} className="btn-sm" style={{flex:1,padding:12,borderRadius:12,
+            <button onClick={exportAll} className="btn-sm" style={{flex:1,padding:12,borderRadius:12,
               border:'1px solid rgba(78,205,196,.3)',background:'rgba(78,205,196,.08)',color:'#4ECDC4',fontSize:13}}>
-              ⬇ Export JSON
+              ⬇ Export
             </button>
+            <button onClick={() => importRef.current?.click()} className="btn-sm" style={{flex:1,padding:12,borderRadius:12,
+              border:'1px solid rgba(78,205,196,.3)',background:'rgba(78,205,196,.08)',color:'#4ECDC4',fontSize:13}}>
+              ⬆ Import
+            </button>
+            <input ref={importRef} type="file" accept=".json" onChange={handleImport}
+              style={{display:'none'}}/>
             <button onClick={clearHistory} className="btn-sm" style={{padding:'12px 16px',borderRadius:12,
               border:'1px solid rgba(255,80,80,.2)',background:'rgba(255,80,80,.06)',color:'#ff5050',fontSize:13}}>
               Clear
@@ -560,7 +842,8 @@ function App() {
               <p style={{color:'rgba(255,255,255,.3)',fontSize:14}}>No sessions yet. Go train!</p>
             </div>
           ) : history.map(entry => {
-            const d = PROGRAM[entry.day];
+            const d = program.days[entry.day];
+            if (!d) return null;
             const totalReps = Object.values(entry.exercises).reduce((a,r)=>a+r.reduce((b,v)=>b+v,0),0);
             const dur = entry.endDate ? Math.round((new Date(entry.endDate)-new Date(entry.date))/60000) : null;
             return (
@@ -578,11 +861,11 @@ function App() {
                   <span style={{fontSize:11,color:'rgba(255,255,255,.3)',marginLeft:4}}>total reps</span>
                 </div>
                 <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                  {Object.entries(entry.exercises).map(([exId,reps]) => {
-                    let nm = exId;
-                    for (const s of d.sections) for (const e of s.exercises) if(e.id===exId) nm=e.name;
-                    return <span key={exId} className="htag">{nm}: {reps.join('-')}</span>;
-                  })}
+                  {Object.entries(entry.exercises).map(([exId,reps]) => (
+                    <span key={exId} className="htag">
+                      {findExerciseName(program, entry.day, exId)}: {reps.join('-')}
+                    </span>
+                  ))}
                 </div>
               </div>
             );
