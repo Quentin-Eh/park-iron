@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Park Iron">
+<meta name="theme-color" content="#0d0d1a">
+<title>Park Iron</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiUGFyayBJcm9uIiwic2hvcnRfbmFtZSI6IlBhcmsgSXJvbiIsInN0YXJ0X3VybCI6Ii4iLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsImJhY2tncm91bmRfY29sb3IiOiIjMGQwZDFhIiwidGhlbWVfY29sb3IiOiIjMGQwZDFhIn0=">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230d0d1a' width='100' height='100' rx='20'/><text x='50' y='65' text-anchor='middle' font-size='50'>🔥</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+::-webkit-scrollbar{display:none}
+html,body{margin:0;padding:0;background:#0d0d1a;color:#fff;font-family:'Inter',-apple-system,sans-serif;
+  overscroll-behavior:none;-webkit-font-smoothing:antialiased;min-height:100vh;min-height:100dvh}
+body{padding-bottom:env(safe-area-inset-bottom,0)}
+button{font-family:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;position:relative;padding-bottom:40px}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.fade-in{animation:fadeIn .3s ease both}
+.slide-up{animation:slideUp .3s ease both}
+.pulse{animation:pulse 1s ease infinite}
+
+/* Day cards */
+.day-card{background:rgba(255,255,255,.03);border-radius:16px;padding:20px 18px;cursor:pointer;
+  text-align:left;position:relative;overflow:hidden;transition:transform .12s,box-shadow .12s;
+  display:block;width:100%;border:none;color:#fff}
+.day-card:active{transform:scale(.98)}
+.day-card .bar{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:16px 0 0 16px}
+
+/* Exercise card */
+.ex-card{background:rgba(255,255,255,.03);border-radius:14px;padding:16px;
+  border:1px solid rgba(255,255,255,.06)}
+
+/* Timer ring */
+.timer-wrap{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 14px;
+  border:1px solid rgba(255,255,255,.06);transition:all .3s}
+.timer-wrap.active{background:rgba(255,107,53,.08);border-color:rgba(255,107,53,.2)}
+.timer-wrap.done{border-color:rgba(78,205,196,.3)}
+
+/* Buttons */
+.btn-primary{width:100%;padding:18px;border-radius:14px;border:none;color:#fff;
+  font-size:16px;font-weight:800;cursor:pointer;letter-spacing:.5px;transition:transform .1s}
+.btn-primary:active{transform:scale(.97)}
+.btn-sm{border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-icon{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  background:rgba(255,255,255,.05);color:rgba(255,255,255,.5)}
+
+/* Rep stepper */
+.rep-stepper{display:flex;align-items:center;gap:8px}
+.rep-stepper .label{font-size:12px;color:rgba(255,255,255,.4);min-width:28px}
+.rep-stepper button{width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.rep-stepper button:active{background:rgba(255,255,255,.1)}
+.rep-stepper .val{font-family:'JetBrains Mono','SF Mono',monospace;font-size:20px;font-weight:700;
+  min-width:32px;text-align:center}
+
+/* Overlay */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center}
+.drawer{background:#1a1a2e;border-radius:20px 20px 0 0;padding:24px 20px calc(40px + env(safe-area-inset-bottom,0));
+  width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
+.drawer-handle{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,.15);margin:0 auto 20px}
+
+/* History tag */
+.htag{background:rgba(255,255,255,.04);border-radius:6px;padding:3px 8px;font-size:11px;
+  color:rgba(255,255,255,.45);font-family:'JetBrains Mono',monospace;display:inline-block}
+
+/* Sticky header */
+.sticky-hdr{position:sticky;top:0;z-index:50;background:#0d0d1a;padding:4px 0 12px;
+  border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:12px}
+
+/* Section label */
+.sec-label{font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.8}
+.sec-meta{font-size:11px;color:rgba(255,255,255,.25);font-weight:500}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#4ECDC4;color:#0d0d1a;
+  padding:10px 20px;border-radius:12px;font-weight:700;font-size:13px;z-index:200;
+  animation:fadeIn .3s ease,fadeIn .3s ease 2s reverse both}
+</style>
+</head>
+<body>
+<div id="app" class="app"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ──── Storage helper (localStorage) ────
+const Storage = {
+  get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+
+// ──── Program Data ────
+const PROGRAM = {
+  A: {
+    name: "Day A", subtitle: "Push Emphasis + Pull Maintenance", color: "#FF6B35",
+    sections: [
+      { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
+        { id:"ring_dips_a", name:"Ring Dips", detail:"3s down, 1s up", target:"6-12",
+          progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause at bottom","Weighted ring dips (backpack)"] },
+        { id:"pullups_a", name:"Pull-ups", detail:"Wide grip, bar", target:"6-12",
+          progression:["Wide grip pull-ups","Slow tempo (4s down)","Archer pull-ups (partial)","Archer pull-ups (full)","One-arm negatives"] },
+      ]},
+      { type:"superset", label:"Superset 2", rounds:3, rest:60, exercises:[
+        { id:"archer_pushups", name:"Archer Push-ups", detail:"Parallettes (or diamond if needed)", target:"6-12",
+          progression:["Diamond push-ups","Archer push-ups (partial)","Archer push-ups (full)","One-arm negatives"] },
+        { id:"ring_rows", name:"Ring Rows", detail:"Feet elevated if possible", target:"6-12",
+          progression:["Ring rows (feet on ground)","Ring rows (feet elevated)","Ring rows (slow 4s eccentric)","Front lever rows (tuck)"] },
+      ]},
+      { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
+        { id:"pike_pushups", name:"Pike Push-ups", detail:"Feet elevated on bar", target:"8-15",
+          progression:["Pike push-ups (feet on ground)","Pike push-ups (feet elevated)","Wall HSPU negatives","Wall HSPU"] },
+        { id:"face_pulls", name:"Ring Face Pulls", detail:"Squeeze rear delts", target:"8-15",
+          progression:["Ring face pulls (upright)","Ring face pulls (more horizontal)","Ring face pulls (slow eccentric)"] },
+      ]},
+      { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
+        { id:"pistols_a", name:"Pistol Squats", detail:"Full depth, each leg", target:"6-8/leg",
+          progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
+      ]},
+    ],
+  },
+  B: {
+    name: "Day B", subtitle: "Pull Emphasis + Push Maintenance", color: "#4ECDC4",
+    sections: [
+      { type:"superset", label:"Superset 1", rounds:3, rest:90, exercises:[
+        { id:"chinups", name:"Chin-ups", detail:"Palms facing you — biceps focus", target:"6-12",
+          progression:["Chin-ups (bodyweight)","Chin-ups (slow 4s eccentric)","Weighted chin-ups","One-arm chin-up negatives"] },
+        { id:"ring_dips_b", name:"Ring Dips", detail:"Maintenance volume", target:"6-12",
+          progression:["Ring dips (3s eccentric)","Ring dips (5s eccentric)","Ring dips w/ 2s pause","Weighted ring dips"] },
+      ]},
+      { type:"superset", label:"Superset 2", rounds:3, rest:90, exercises:[
+        { id:"archer_pullups", name:"Archer Pull-ups", detail:"Or slow-tempo pull-ups if not ready", target:"4-8",
+          progression:["Slow tempo pull-ups (5s down)","Archer pull-ups (partial shift)","Archer pull-ups (full)","One-arm negatives (5s+)"] },
+        { id:"deep_pushups", name:"Deep Push-ups", detail:"Parallettes, full ROM", target:"8-12",
+          progression:["Deep push-ups (parallettes)","Deep push-ups (slow 3s eccentric)","Deficit push-ups (elevated hands)","Pseudo-planche push-ups"] },
+      ]},
+      { type:"superset", label:"Finisher", rounds:2, rest:60, exercises:[
+        { id:"ring_curls", name:"Ring Curls", detail:"Supinated grip, elbows fixed", target:"8-12",
+          progression:["Ring curls (upright)","Ring curls (more horizontal)","Ring curls (slow eccentric)"] },
+        { id:"leg_raises", name:"Hanging Leg Raises", detail:"Straight legs, to L or V", target:"8-12",
+          progression:["Knee raises","L-raise (straight legs to L)","V-raise (legs to bar)","Toes to bar (slow)"] },
+      ]},
+      { type:"straight", label:"Legs", rounds:3, rest:90, exercises:[
+        { id:"bulgarians", name:"Bulgarian Split Squats", detail:"Rear foot on parallette", target:"8-10/leg",
+          progression:["Bulgarian split squats","Slow eccentric (4s)","Weighted (backpack)"] },
+      ]},
+    ],
+  },
+  C: {
+    name: "Day C", subtitle: "Legs + Core + Skill", color: "#A855F7",
+    sections: [
+      { type:"straight", label:"Legs", rounds:3, rest:120, exercises:[
+        { id:"pistols_c", name:"Pistol Squats", detail:"Max quality reps per leg", target:"max/leg",
+          progression:["Bodyweight pistols","Slow eccentric (5s)","Weighted (backpack/stone)"] },
+      ]},
+      { type:"straight", label:"Posterior Chain", rounds:3, rest:120, exercises:[
+        { id:"nordics", name:"Nordic Curl Negatives", detail:"Lower as slowly as possible", target:"4-6",
+          progression:["Nordic negatives (with bar assist)","Nordic negatives (less assist)","Nordic negatives (no assist)","Full Nordic curls"] },
+      ]},
+      { type:"straight", label:"Power", rounds:3, rest:90, exercises:[
+        { id:"jump_squats", name:"Jump Squats", detail:"Explosive, full recovery", target:"8",
+          progression:["Jump squats","Jump squats (deeper)","Weighted jump squats"] },
+      ]},
+      { type:"straight", label:"Core & Skills", rounds:3, rest:60, exercises:[
+        { id:"vsit", name:"V-sit Hold", detail:"Max hold", target:"15-20s", isHold:true,
+          progression:["L-sit (30s+)","V-sit (building to 20s)","V-sit (20s+)"] },
+        { id:"planche_lean", name:"Pseudo-planche Lean", detail:"On parallettes, lean forward", target:"15-20s", isHold:true,
+          progression:["Slight lean","Moderate lean (shoulders past wrists)","Deep lean","Tuck planche attempts"] },
+        { id:"ring_support", name:"Ring Support Hold", detail:"Arms turned out (RTO)", target:"20-30s", isHold:true,
+          progression:["Ring support (neutral)","Ring support (turned out 45°)","Ring support (full RTO)","Ring support + lean forward"] },
+      ]},
+    ],
+  },
+};
+
+const fmt = s => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+const fmtDate = iso => new Date(iso).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+
+// ──── Timer ────
+function RestTimer({ duration, onComplete }) {
+  const [rem, setRem] = useState(duration);
+  const [on, setOn] = useState(false);
+  const iv = useRef(null);
+  const ctx = useRef(null);
+
+  const beep = useCallback((freq=880) => {
+    try {
+      if (!ctx.current) ctx.current = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.current.createOscillator(), g = ctx.current.createGain();
+      o.connect(g); g.connect(ctx.current.destination);
+      o.frequency.value = freq; g.gain.value = 0.3;
+      o.start(); o.stop(ctx.current.currentTime + 0.15);
+    } catch{}
+  },[]);
+
+  useEffect(() => {
+    if (on && rem > 0) {
+      iv.current = setInterval(() => {
+        setRem(r => {
+          if (r <= 1) { clearInterval(iv.current); setOn(false); beep(1200); onComplete?.(); return 0; }
+          if (r === 4) beep(660);
+          return r - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(iv.current);
+  }, [on, rem, beep, onComplete]);
+
+  const toggle = () => { if (rem===0){setRem(duration);setOn(true)} else setOn(!on) };
+  const reset = () => { clearInterval(iv.current); setOn(false); setRem(duration) };
+  const pct = ((duration-rem)/duration)*100;
+  const low = rem<=5 && rem>0 && on;
+  const done = rem===0 && !on;
+
+  return (
+    <div className={`timer-wrap ${on?'active':''} ${done?'done':''}`}>
+      <div style={{position:'relative',width:48,height:48,flexShrink:0}}>
+        <svg viewBox="0 0 48 48" style={{transform:'rotate(-90deg)'}}>
+          <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="3"/>
+          <circle cx="24" cy="24" r="20" fill="none" stroke={done?'#4ECDC4':on?'#FF6B35':'rgba(255,255,255,.2)'}
+            strokeWidth="3" strokeDasharray={`${pct*1.2566} 125.66`} strokeLinecap="round"
+            style={{transition:'stroke-dasharray .3s'}}/>
+        </svg>
+        <span style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',
+          fontFamily:"'JetBrains Mono',monospace",fontSize:12,fontWeight:700,
+          color:low?'#FF6B35':done?'#4ECDC4':'#fff'}} className={low?'pulse':''}>
+          {done?'GO!':fmt(rem)}
+        </span>
+      </div>
+      <span style={{fontSize:13,color:'rgba(255,255,255,.4)',fontWeight:500}}>
+        {done ? 'Rest complete' : `Rest ${duration}s`}
+      </span>
+      <div style={{marginLeft:'auto',display:'flex',gap:6}}>
+        <button onClick={toggle} className="btn-sm" style={{
+          background:done?'rgba(78,205,196,.15)':on?'rgba(255,107,53,.2)':'rgba(78,205,196,.15)',
+          color:done?'#4ECDC4':on?'#FF6B35':'#4ECDC4'}}>
+          {done?'RESET':on?'PAUSE':'START'}
+        </button>
+        {on && <button onClick={reset} className="btn-sm"
+          style={{background:'rgba(255,255,255,.05)',color:'rgba(255,255,255,.4)'}}>✕</button>}
+      </div>
+    </div>
+  );
+}
+
+// ──── Hold Timer (for isometric exercises) ────
+function HoldTimer() {
+  const [elapsed, setElapsed] = useState(0);
+  const [on, setOn] = useState(false);
+  const iv = useRef(null);
+  const ctx = useRef(null);
+
+  useEffect(() => {
+    if (on) {
+      iv.current = setInterval(() => setElapsed(e => e + 1), 1000);
+    }
+    return () => clearInterval(iv.current);
+  }, [on]);
+
+  const toggle = () => {
+    if (on) { clearInterval(iv.current); setOn(false); }
+    else { setElapsed(0); setOn(true); }
+  };
+
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8,marginTop:8}}>
+      <button onClick={toggle} className="btn-sm" style={{
+        background:on?'rgba(168,85,247,.2)':'rgba(168,85,247,.1)',
+        color:'#A855F7',minWidth:60}}>
+        {on ? 'STOP' : 'HOLD'}
+      </button>
+      <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:16,fontWeight:700,
+        color:on?'#A855F7':'rgba(255,255,255,.5)',minWidth:50}}>
+        {fmt(elapsed)}
+      </span>
+    </div>
+  );
+}
+
+// ──── Rep Input ────
+function RepInput({ value, onChange, label }) {
+  return (
+    <div className="rep-stepper">
+      <span className="label">{label}</span>
+      <button onClick={() => onChange(Math.max(0,(value||0)-1))}>−</button>
+      <span className="val">{value||0}</span>
+      <button onClick={() => onChange((value||0)+1)}>+</button>
+    </div>
+  );
+}
+
+// ──── Progression Drawer ────
+function ProgressionDrawer({ exercise, onClose }) {
+  if (!exercise) return null;
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="drawer slide-up" onClick={e=>e.stopPropagation()}>
+        <div className="drawer-handle"/>
+        <h3 style={{fontSize:18,fontWeight:700,marginBottom:4}}>{exercise.name}</h3>
+        <p style={{color:'rgba(255,255,255,.4)',fontSize:13,marginBottom:20}}>Progression Ladder</p>
+        {exercise.progression.map((step,i) => (
+          <div key={i} style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0',
+            borderBottom:i<exercise.progression.length-1?'1px solid rgba(255,255,255,.06)':'none'}}>
+            <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',
+              justifyContent:'center',flexShrink:0,fontSize:12,fontWeight:700,
+              background:i===0?'rgba(78,205,196,.2)':'rgba(255,255,255,.05)',
+              color:i===0?'#4ECDC4':'rgba(255,255,255,.3)'}}>
+              {i+1}
+            </div>
+            <span style={{color:i===0?'#fff':'rgba(255,255,255,.5)',fontSize:14,
+              fontWeight:i===0?600:400}}>{step}</span>
+            {i===0 && <span style={{marginLeft:'auto',background:'rgba(78,205,196,.15)',color:'#4ECDC4',
+              fontSize:10,fontWeight:700,padding:'3px 8px',borderRadius:6,letterSpacing:.5}}>START</span>}
+          </div>
+        ))}
+        <p style={{marginTop:20,color:'rgba(255,255,255,.35)',fontSize:12,lineHeight:1.5}}>
+          Progress when you hit the top of your rep range on all sets for 2 sessions in a row.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ──── Exercise Card ────
+function ExerciseCard({ exercise, totalRounds, reps, onRepsChange, dayColor }) {
+  const [showProg, setShowProg] = useState(false);
+  return (
+    <>
+      <div className="ex-card">
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:8}}>
+          <div>
+            <h4 style={{fontSize:16,fontWeight:700}}>{exercise.name}</h4>
+            <p style={{color:'rgba(255,255,255,.4)',fontSize:12,marginTop:2}}>{exercise.detail}</p>
+          </div>
+          <button onClick={()=>setShowProg(true)} className="btn-sm"
+            style={{background:'rgba(255,255,255,.05)',color:'rgba(255,255,255,.5)',fontSize:11}}>
+            ↑ Prog
+          </button>
+        </div>
+        <div style={{display:'inline-flex',alignItems:'center',gap:6,marginBottom:12,
+          background:`${dayColor}15`,borderRadius:8,padding:'4px 10px'}}>
+          <span style={{fontSize:11,color:dayColor,fontWeight:600}}>
+            Target: {exercise.target} {exercise.isHold?'':'reps'}
+          </span>
+        </div>
+        {exercise.isHold ? (
+          <div>
+            <HoldTimer/>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,marginTop:10}}>
+              {Array.from({length:totalRounds}).map((_,i)=>(
+                <RepInput key={i} label={`S${i+1}`} value={reps[i]}
+                  onChange={v=>{const n=[...reps];n[i]=v;onRepsChange(n)}}/>
+              ))}
+            </div>
+            <p style={{fontSize:10,color:'rgba(255,255,255,.25)',marginTop:6}}>Log seconds held per set</p>
+          </div>
+        ) : (
+          <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+            {Array.from({length:totalRounds}).map((_,i)=>(
+              <RepInput key={i} label={`S${i+1}`} value={reps[i]}
+                onChange={v=>{const n=[...reps];n[i]=v;onRepsChange(n)}}/>
+            ))}
+          </div>
+        )}
+      </div>
+      {showProg && <ProgressionDrawer exercise={exercise} onClose={()=>setShowProg(false)}/>}
+    </>
+  );
+}
+
+// ──── Main App ────
+function App() {
+  const [screen, setScreen] = useState('home');
+  const [activeDay, setActiveDay] = useState(null);
+  const [sessionData, setSessionData] = useState({});
+  const [sessionStart, setSessionStart] = useState(null);
+  const [history, setHistory] = useState(() => Storage.get('pi-history') || []);
+  const [toast, setToast] = useState(null);
+
+  const showToast = msg => { setToast(msg); setTimeout(()=>setToast(null),2500); };
+
+  const startSession = day => {
+    setActiveDay(day); setSessionData({}); setSessionStart(new Date().toISOString()); setScreen('session');
+  };
+
+  const getReps = (id, rounds) => sessionData[id] || new Array(rounds).fill(0);
+  const setReps = (id, r) => setSessionData(d => ({...d, [id]:r}));
+
+  const finishSession = () => {
+    const entry = { id:Date.now(), day:activeDay, date:sessionStart, endDate:new Date().toISOString(), exercises:sessionData };
+    const h = [entry,...history];
+    setHistory(h); Storage.set('pi-history',h);
+    setScreen('home'); setActiveDay(null);
+    showToast('Session saved!');
+  };
+
+  const exportJSON = () => {
+    const b = new Blob([JSON.stringify(history,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `park-iron-log-${new Date().toISOString().slice(0,10)}.json`;
+    a.click(); URL.revokeObjectURL(a.href);
+    showToast('Log exported!');
+  };
+
+  const clearHistory = () => {
+    if (confirm('Delete all session history? Cannot be undone.')) {
+      setHistory([]); Storage.del('pi-history'); showToast('History cleared');
+    }
+  };
+
+  const day = activeDay ? PROGRAM[activeDay] : null;
+
+  return (
+    <div>
+      {toast && <div className="toast">{toast}</div>}
+
+      {/* ──── HOME ──── */}
+      {screen === 'home' && (
+        <div style={{padding:'20px 16px'}} className="fade-in">
+          <div style={{marginBottom:32}}>
+            <h1 style={{fontSize:30,fontWeight:900,letterSpacing:-1.5,
+              background:'linear-gradient(135deg,#FF6B35,#4ECDC4)',
+              WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+              PARK IRON
+            </h1>
+            <p style={{color:'rgba(255,255,255,.4)',fontSize:13,fontWeight:500,marginTop:4}}>
+              Minimal dose. Maximum growth.
+            </p>
+          </div>
+
+          <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:28}}>
+            {Object.entries(PROGRAM).map(([k,d]) => {
+              const last = history.find(h=>h.day===k);
+              return (
+                <button key={k} className="day-card" onClick={()=>startSession(k)}
+                  style={{borderColor:`${d.color}20`}}>
+                  <div className="bar" style={{background:d.color}}/>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <div style={{paddingLeft:8}}>
+                      <h3 style={{fontSize:18,fontWeight:800}}>{d.name}</h3>
+                      <p style={{color:'rgba(255,255,255,.45)',fontSize:13,fontWeight:500,marginTop:4}}>
+                        {d.subtitle}
+                      </p>
+                      {last && <p style={{color:'rgba(255,255,255,.2)',fontSize:11,marginTop:8}}>
+                        Last: {fmtDate(last.date)}</p>}
+                    </div>
+                    <div style={{width:48,height:48,borderRadius:14,background:`${d.color}15`,
+                      display:'flex',alignItems:'center',justifyContent:'center',
+                      fontSize:24,fontWeight:900,color:d.color,flexShrink:0}}>
+                      {k}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <button onClick={()=>setScreen('history')} className="day-card"
+            style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'16px 18px'}}>
+            <div>
+              <span style={{fontSize:15,fontWeight:700}}>Session History</span>
+              <span style={{color:'rgba(255,255,255,.3)',fontSize:13,marginLeft:8}}>
+                {history.length} session{history.length!==1?'s':''}
+              </span>
+            </div>
+            <span style={{color:'rgba(255,255,255,.3)',fontSize:18}}>→</span>
+          </button>
+        </div>
+      )}
+
+      {/* ──── SESSION ──── */}
+      {screen === 'session' && day && (
+        <div style={{padding:'16px'}} className="fade-in">
+          <div className="sticky-hdr">
+            <button className="btn-icon" onClick={() => {
+              if (confirm('End session without saving?')) setScreen('home');
+            }}>←</button>
+            <div>
+              <h2 style={{fontSize:20,fontWeight:800,color:day.color}}>{day.name}</h2>
+              <p style={{color:'rgba(255,255,255,.35)',fontSize:12}}>{day.subtitle}</p>
+            </div>
+          </div>
+
+          {day.sections.map((sec,si) => (
+            <div key={si} style={{marginBottom:28}} className="fade-in" style={{animationDelay:`${si*80}ms`}}>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,marginTop:si?0:16}}>
+                <span className="sec-label" style={{color:day.color}}>{sec.label}</span>
+                <span className="sec-meta">
+                  {sec.rounds} rounds · {sec.type==='superset'?'superset':'straight sets'}
+                </span>
+              </div>
+
+              {sec.exercises.map(ex => (
+                <div key={ex.id} style={{marginBottom:12}}>
+                  <ExerciseCard exercise={ex} totalRounds={sec.rounds}
+                    reps={getReps(ex.id,sec.rounds)} onRepsChange={r=>setReps(ex.id,r)}
+                    dayColor={day.color}/>
+                </div>
+              ))}
+
+              <RestTimer duration={sec.rest}/>
+            </div>
+          ))}
+
+          {/* RIR reminder */}
+          <div style={{background:'rgba(78,205,196,.08)',borderRadius:14,padding:'14px 16px',
+            border:'1px solid rgba(78,205,196,.15)',marginBottom:20}}>
+            <p style={{fontSize:13,color:'#4ECDC4',fontWeight:600,lineHeight:1.5}}>
+              💡 Stop when you could do 1-2 more ugly reps. Go all-out only on the <strong>last set</strong> of each exercise.
+            </p>
+          </div>
+
+          <button onClick={finishSession} className="btn-primary"
+            style={{background:`linear-gradient(135deg,${day.color},${day.color}aa)`,marginBottom:20}}>
+            FINISH & SAVE SESSION ✓
+          </button>
+        </div>
+      )}
+
+      {/* ──── HISTORY ──── */}
+      {screen === 'history' && (
+        <div style={{padding:'16px'}} className="fade-in">
+          <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:24}}>
+            <button className="btn-icon" onClick={()=>setScreen('home')}>←</button>
+            <h2 style={{fontSize:20,fontWeight:800}}>History</h2>
+          </div>
+
+          <div style={{display:'flex',gap:8,marginBottom:20}}>
+            <button onClick={exportJSON} className="btn-sm" style={{flex:1,padding:12,borderRadius:12,
+              border:'1px solid rgba(78,205,196,.3)',background:'rgba(78,205,196,.08)',color:'#4ECDC4',fontSize:13}}>
+              ⬇ Export JSON
+            </button>
+            <button onClick={clearHistory} className="btn-sm" style={{padding:'12px 16px',borderRadius:12,
+              border:'1px solid rgba(255,80,80,.2)',background:'rgba(255,80,80,.06)',color:'#ff5050',fontSize:13}}>
+              Clear
+            </button>
+          </div>
+
+          {history.length === 0 ? (
+            <div style={{textAlign:'center',marginTop:60}}>
+              <p style={{fontSize:32,marginBottom:8}}>🏋️</p>
+              <p style={{color:'rgba(255,255,255,.3)',fontSize:14}}>No sessions yet. Go train!</p>
+            </div>
+          ) : history.map(entry => {
+            const d = PROGRAM[entry.day];
+            const totalReps = Object.values(entry.exercises).reduce((a,r)=>a+r.reduce((b,v)=>b+v,0),0);
+            const dur = entry.endDate ? Math.round((new Date(entry.endDate)-new Date(entry.date))/60000) : null;
+            return (
+              <div key={entry.id} style={{background:'rgba(255,255,255,.03)',borderRadius:14,
+                padding:'16px 18px',marginBottom:10,border:`1px solid ${d.color}15`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+                  <div>
+                    <span style={{color:d.color,fontWeight:800,fontSize:15}}>{d.name}</span>
+                    <span style={{color:'rgba(255,255,255,.25)',fontSize:12,marginLeft:8}}>{fmtDate(entry.date)}</span>
+                  </div>
+                  {dur!=null && <span className="htag">{dur}min</span>}
+                </div>
+                <div style={{marginBottom:8}}>
+                  <span style={{fontFamily:"'JetBrains Mono',monospace",fontSize:18,fontWeight:700}}>{totalReps}</span>
+                  <span style={{fontSize:11,color:'rgba(255,255,255,.3)',marginLeft:4}}>total reps</span>
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                  {Object.entries(entry.exercises).map(([exId,reps]) => {
+                    let nm = exId;
+                    for (const s of d.sections) for (const e of s.exercises) if(e.id===exId) nm=e.name;
+                    return <span key={exId} className="htag">{nm}: {reps.join('-')}</span>;
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('app')).render(<App/>);
+</script>
+</body>
+</html>
