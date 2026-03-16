@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+
+:root {
+  /* Colors */
+  --color-bg: #0d0d1a;
+  --color-surface: #1a1a2e;
+  --color-white: 255, 255, 255;
+  --color-error: #ff5050;
+  --day-color: #4ECDC4;
+  --day-color-rgb: 78, 205, 196;
+
+  /* White alpha scale */
+  --alpha-surface: 0.04;
+  --alpha-subtle: 0.05;
+  --alpha-border: 0.08;
+  --alpha-border-strong: 0.12;
+  --alpha-muted: 0.15;
+  --alpha-text-faint: 0.25;
+  --alpha-text-secondary: 0.3;
+  --alpha-text-body: 0.4;
+  --alpha-text-muted: 0.5;
+  --alpha-text-soft: 0.6;
+
+  /* Semantic colors */
+  --text-primary: #fff;
+  --text-secondary: rgba(var(--color-white), var(--alpha-text-secondary));
+  --text-body: rgba(var(--color-white), var(--alpha-text-body));
+  --text-muted: rgba(var(--color-white), var(--alpha-text-muted));
+  --text-faint: rgba(var(--color-white), var(--alpha-text-faint));
+  --bg-surface: rgba(var(--color-white), var(--alpha-surface));
+  --bg-subtle: rgba(var(--color-white), var(--alpha-subtle));
+  --border-default: rgba(var(--color-white), var(--alpha-border));
+  --border-strong: rgba(var(--color-white), var(--alpha-border-strong));
+  --day-bg: rgba(var(--day-color-rgb), 0.08);
+  --day-bg-subtle: rgba(var(--day-color-rgb), 0.15);
+  --day-border: rgba(var(--day-color-rgb), 0.25);
+
+  /* Typography */
+  --font-ui: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --text-xs: 10px;
+  --text-sm: 11px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-3xl: 28px;
+  --text-4xl: 30px;
+  --text-display: 48px;
+  --text-hero: 56px;
+
+  /* Spacing (4px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+
+  /* Border radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-3xl: 20px;
+  --radius-full: 50%;
+
+  /* Z-index layers */
+  --z-controls: 99;
+  --z-progress: 100;
+  --z-overlay: 200;
+  --z-toast: 300;
+
+  /* Touch targets */
+  --touch-sm: 36px;
+  --touch-md: 44px;
+  --touch-lg: 56px;
+}

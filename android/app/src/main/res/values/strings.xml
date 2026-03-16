@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Park Iron</string>
+    <string name="title_activity_main">Park Iron</string>
+    <string name="package_name">com.parkiron.app</string>
+    <string name="custom_url_scheme">com.parkiron.app</string>
+</resources>
