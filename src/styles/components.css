@@ -250,3 +250,108 @@
   font-size: var(--text-sm);
   color: var(--text-secondary);
 }
+
+/* Overview toggle */
+.overview-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-right: 4px;
+  border-radius: var(--radius-sm);
+  -webkit-tap-highlight-color: transparent;
+}
+.overview-toggle:active {
+  background: var(--bg-subtle);
+}
+
+/* Session overview */
+.overview {
+  padding: 40px var(--space-4) calc(80px + env(safe-area-inset-bottom, 0));
+  max-width: 480px;
+  margin: 0 auto;
+}
+.overview-list {
+  display: flex;
+  flex-direction: column;
+}
+.overview-section {
+  font-size: var(--text-sm);
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  opacity: .8;
+  padding: var(--space-4) 0 var(--space-2);
+}
+.overview-section:first-child {
+  padding-top: var(--space-2);
+}
+.overview-step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3);
+  border-radius: var(--radius-lg);
+  transition: opacity .2s;
+}
+.overview-step.done {
+  opacity: .45;
+}
+.overview-step.current {
+  background: var(--bg-surface);
+  border-left: 3px solid var(--day-color, var(--text-primary));
+}
+.overview-step-marker {
+  flex-shrink: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.overview-check {
+  color: var(--day-color, #4ECDC4);
+  font-weight: 700;
+  font-size: var(--text-base);
+}
+.overview-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--day-color, var(--text-primary));
+}
+.overview-dot.upcoming {
+  background: var(--border-default);
+}
+.overview-step-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.overview-name {
+  font-weight: 700;
+  font-size: var(--text-base);
+}
+.overview-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+}
+.overview-reps {
+  color: var(--day-color, #4ECDC4);
+  font-weight: 600;
+}
+.overview-rest {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  padding: 2px 0 2px 52px;
+  font-family: var(--font-mono);
+}
+.overview-rest.done {
+  opacity: .45;
+}
+.overview-back {
+  margin-top: var(--space-5);
+  background: var(--day-color, var(--bg-surface));
+}

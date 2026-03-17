@@ -21,6 +21,7 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('exercise');
   const [showProg, setShowProg] = useState(false);
+  const [viewMode, setViewMode] = useState<'step' | 'overview'>('step');
 
   const [pendingDraft, setPendingDraft] = useState<SessionDraft | null>(() => {
     const draft = DataStore.getDraft();
@@ -205,6 +206,7 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     activeDay, day,
     sessionData, history, setHistory, progressions, setProgressions,
     steps, currentStep, sessionPhase, showProg, setShowProg,
+    viewMode, setViewMode,
     pendingDraft, step, nextStep, isNewSection, currentReps,
     startSession, resumeSession, discardDraft,
     getStepReps, setStepReps, getProgLevel, setProgLevel,

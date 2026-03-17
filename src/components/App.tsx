@@ -63,6 +63,7 @@ export function App() {
           activeDay={session.activeDay!}
           step={session.step}
           nextStep={session.nextStep}
+          steps={session.steps}
           currentStep={session.currentStep}
           totalSteps={session.steps.length}
           sessionPhase={session.sessionPhase}
@@ -70,12 +71,15 @@ export function App() {
           currentReps={session.currentReps}
           progLevel={session.getProgLevel(session.step.exercise.id)}
           showProg={session.showProg}
+          viewMode={session.viewMode}
+          sessionData={session.sessionData}
           onSetReps={session.setStepReps}
           onShowProg={session.setShowProg}
           onSetProgLevel={session.setProgLevel}
           onStepDone={session.handleStepDone}
           onRestComplete={session.handleRestComplete}
           onBack={session.handleSessionBack}
+          onSetViewMode={session.setViewMode}
         />
       )}
 
