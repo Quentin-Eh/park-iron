@@ -21,7 +21,7 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('exercise');
   const [showProg, setShowProg] = useState(false);
-  const [viewMode, setViewMode] = useState<'step' | 'overview'>('step');
+  const [viewMode, setViewMode] = useState<'step' | 'overview' | 'exercises'>('step');
 
   const [pendingDraft, setPendingDraft] = useState<SessionDraft | null>(() => {
     const draft = DataStore.getDraft();

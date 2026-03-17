@@ -61,6 +61,7 @@ export function App() {
       {session.screen === 'session' && session.day && session.step && (
         <SessionScreen
           activeDay={session.activeDay!}
+          day={session.day!}
           step={session.step}
           nextStep={session.nextStep}
           steps={session.steps}
@@ -73,6 +74,7 @@ export function App() {
           showProg={session.showProg}
           viewMode={session.viewMode}
           sessionData={session.sessionData}
+          getProgLevel={session.getProgLevel}
           onSetReps={session.setStepReps}
           onShowProg={session.setShowProg}
           onSetProgLevel={session.setProgLevel}

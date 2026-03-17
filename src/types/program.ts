@@ -2,6 +2,7 @@ export interface Exercise {
   id: string;
   name: string;
   detail: string;
+  notes?: string;
   target: string;
   isHold?: boolean;
   progression: string[];
