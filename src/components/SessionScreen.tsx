@@ -54,48 +54,48 @@ export function SessionScreen({
         {currentStep + 1} / {totalSteps}
       </div>
 
-      {viewMode === 'overview' ? (
+      {viewMode === 'overview' && (
         <SessionOverview
           steps={steps}
           currentStep={currentStep}
           sessionData={sessionData}
           onBackToStep={() => onSetViewMode('step')}
         />
-      ) : (
-        <>
-          {sessionPhase === 'exercise' && (
-            <ExercisePhase
-              step={step}
-              currentStep={currentStep}
-              isNewSection={isNewSection}
-              currentReps={currentReps}
-              progLevel={progLevel}
-              onSetReps={onSetReps}
-              onShowProg={() => onShowProg(true)}
-              onDone={onStepDone}
-              onBack={onBack}
-            />
-          )}
-
-          {sessionPhase === 'resting' && (
-            <RestPhase
-              key={`rest-${currentStep}`}
-              duration={step.restAfter}
-              nextStep={nextStep}
-              onComplete={onRestComplete}
-            />
-          )}
-
-          {showProg && step && (
-            <ProgressionDrawer
-              exercise={step.exercise}
-              currentLevel={progLevel}
-              onSelectLevel={(lvl) => onSetProgLevel(step.exercise.id, lvl)}
-              onClose={() => onShowProg(false)}
-            />
-          )}
-        </>
       )}
+
+      <div style={{ display: viewMode === 'overview' ? 'none' : undefined }}>
+        {sessionPhase === 'exercise' && (
+          <ExercisePhase
+            step={step}
+            currentStep={currentStep}
+            isNewSection={isNewSection}
+            currentReps={currentReps}
+            progLevel={progLevel}
+            onSetReps={onSetReps}
+            onShowProg={() => onShowProg(true)}
+            onDone={onStepDone}
+            onBack={onBack}
+          />
+        )}
+
+        {sessionPhase === 'resting' && (
+          <RestPhase
+            key={`rest-${currentStep}`}
+            duration={step.restAfter}
+            nextStep={nextStep}
+            onComplete={onRestComplete}
+          />
+        )}
+
+        {showProg && step && (
+          <ProgressionDrawer
+            exercise={step.exercise}
+            currentLevel={progLevel}
+            onSelectLevel={(lvl) => onSetProgLevel(step.exercise.id, lvl)}
+            onClose={() => onShowProg(false)}
+          />
+        )}
+      </div>
     </div>
   );
 }
