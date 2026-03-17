@@ -22,6 +22,7 @@ CREATE TABLE sessions (
   ended_at TIMESTAMPTZ,
   exercises JSONB NOT NULL,
   progressions JSONB,
+  coaching_feedback TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(user_id, local_id)
 );
@@ -42,6 +43,9 @@ CREATE TABLE programs (
   data JSONB NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- AI coaching feedback (added after initial schema)
+-- Run: ALTER TABLE sessions ADD COLUMN coaching_feedback TEXT;
 
 -- ═══════════════════════════════════════════════
 -- ROW LEVEL SECURITY

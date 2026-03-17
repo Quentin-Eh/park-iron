@@ -7,7 +7,7 @@ import { DataStore } from '../data/store.ts';
 import { SyncedStore } from '../data/synced-store.ts';
 
 export type SessionPhase = 'exercise' | 'resting';
-export type Screen = 'home' | 'session' | 'history';
+export type Screen = 'home' | 'session' | 'history' | 'coaching';
 
 export function useSession(program: Program, showToast: (msg: string) => void, userId: string | null) {
   const [screen, setScreen] = useState<Screen>('home');
@@ -22,6 +22,7 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('exercise');
   const [showProg, setShowProg] = useState(false);
   const [viewMode, setViewMode] = useState<'step' | 'map'>('step');
+  const [lastCompletedSession, setLastCompletedSession] = useState<Session | null>(null);
 
   const [pendingDraft, setPendingDraft] = useState<SessionDraft | null>(() => {
     const draft = DataStore.getDraft();
@@ -154,10 +155,23 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     }
 
     DataStore.clearDraft();
-    setScreen('home');
-    setActiveDay(null);
+
+    // Show coaching screen if authenticated + online
+    if (userId && navigator.onLine) {
+      setLastCompletedSession(entry);
+      setScreen('coaching');
+    } else {
+      setScreen('home');
+      setActiveDay(null);
+    }
     showToast('Session saved!');
   }, [activeDay, sessionStart, sessionData, progressions, history, showToast, userId]);
+
+  const dismissCoaching = useCallback(() => {
+    setScreen('home');
+    setActiveDay(null);
+    setLastCompletedSession(null);
+  }, []);
 
   const handleStepDone = useCallback(() => {
     setShowProg(false);
@@ -214,8 +228,9 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     steps, currentStep, sessionPhase, showProg, setShowProg,
     viewMode, setViewMode,
     pendingDraft, step, nextStep, isNewSection, currentReps,
+    lastCompletedSession,
     startSession, resumeSession, discardDraft,
     getStepReps, setStepReps, getProgLevel, setProgLevel,
-    finishSession, handleStepDone, handleRestComplete, handleSessionBack,
+    finishSession, dismissCoaching, handleStepDone, handleRestComplete, handleSessionBack,
   } as const;
 }

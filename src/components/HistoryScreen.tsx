@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Program } from '../types/program.ts';
 import type { Session } from '../types/session.ts';
 import { WEEKDAY_NAMES, fmtDate, findExerciseName } from '../lib/format.ts';
@@ -136,9 +136,41 @@ export function HistoryScreen({ program, history, setHistory, setProgressions, s
                 </span>
               ))}
             </div>
+            {entry.coachingFeedback && (
+              <CoachingToggle feedback={entry.coachingFeedback} />
+            )}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function CoachingToggle({ feedback }: { feedback: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ marginTop: 'var(--space-3)' }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', fontWeight: 600,
+          display: 'flex', alignItems: 'center', gap: 'var(--space-1)',
+        }}
+      >
+        <span style={{ transition: 'transform .2s', display: 'inline-block', transform: open ? 'rotate(90deg)' : 'none' }}>
+          ›
+        </span>
+        Coach notes
+      </button>
+      {open && (
+        <div className="coaching-feedback history-coaching" style={{ marginTop: 'var(--space-2)' }}>
+          {feedback.split('\n\n').map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -631,3 +631,59 @@
   min-width: 32px;
   text-align: center;
 }
+
+/* Coaching screen */
+.coaching-screen {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.coaching-summary {
+  background: var(--bg-surface);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-5) var(--space-5);
+  margin-bottom: var(--space-5);
+  border: 1px solid var(--day-bg);
+}
+.coaching-feedback-area {
+  flex: 1;
+}
+.coaching-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.coaching-skeleton-line {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  animation: skeletonPulse 1.8s ease infinite;
+}
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+.coaching-feedback p {
+  color: var(--text-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  margin: 0 0 var(--space-4);
+}
+.coaching-feedback p:last-child {
+  margin-bottom: 0;
+}
+.coaching-error {
+  text-align: center;
+  padding: var(--space-6) 0;
+}
+
+/* History coaching notes */
+.history-coaching p {
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-2);
+}
+.history-coaching p:last-child {
+  margin-bottom: 0;
+}

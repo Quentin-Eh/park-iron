@@ -7,6 +7,7 @@ export interface Session {
   endDate: string;
   exercises: SessionData;
   progressions: Record<string, number>;
+  coachingFeedback?: string;
 }
 
 export interface SessionDraft {

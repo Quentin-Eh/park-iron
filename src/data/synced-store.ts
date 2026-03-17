@@ -46,6 +46,7 @@ export const SyncedStore = {
         endDate: row.ended_at,
         exercises: row.exercises as SessionData,
         progressions: (row.progressions as Record<string, number>) || {},
+        ...(row.coaching_feedback ? { coachingFeedback: row.coaching_feedback as string } : {}),
       }));
 
       // Cache locally
@@ -200,6 +201,23 @@ export const SyncedStore = {
     }
 
     setQueue(remaining);
+  },
+
+  // ── Coaching ──
+
+  async fetchCoaching(sessionLocalId: number): Promise<string | null> {
+    if (!supabase || !navigator.onLine) return null;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('coaching', {
+        body: { session_local_id: sessionLocalId },
+      });
+
+      if (error) throw error;
+      return data?.feedback || null;
+    } catch {
+      return null;
+    }
   },
 
   // ── Migration: localStorage → Supabase ──

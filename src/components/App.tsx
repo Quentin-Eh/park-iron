@@ -10,6 +10,7 @@ import { ResumePrompt } from './ResumePrompt.tsx';
 import { HomeScreen } from './HomeScreen.tsx';
 import { SessionScreen } from './SessionScreen.tsx';
 import { HistoryScreen } from './HistoryScreen.tsx';
+import { CoachingScreen } from './CoachingScreen.tsx';
 
 export function App() {
   const [program] = useState<Program>(() => DataStore.getProgram());
@@ -82,6 +83,15 @@ export function App() {
           onRestComplete={session.handleRestComplete}
           onBack={session.handleSessionBack}
           onSetViewMode={session.setViewMode}
+        />
+      )}
+
+      {session.screen === 'coaching' && session.lastCompletedSession && (
+        <CoachingScreen
+          session={session.lastCompletedSession}
+          program={program}
+          userId={auth.user!.id}
+          onDone={session.dismissCoaching}
         />
       )}
 
