@@ -1,5 +1,6 @@
 import type { Session, SessionData } from '../types/session.ts';
 import type { Program } from '../types/program.ts';
+import type { OnboardingAnswers } from '../types/onboarding.ts';
 import { supabase } from '../lib/supabase.ts';
 import { DataStore } from './store.ts';
 
@@ -150,6 +151,38 @@ export const SyncedStore = {
     } catch {
       return DataStore.getProgram();
     }
+  },
+
+  async saveProgram(userId: string, program: Program): Promise<void> {
+    DataStore.saveProgram(program);
+
+    if (!supabase || !navigator.onLine) {
+      enqueue({ type: 'program', payload: program });
+      return;
+    }
+
+    try {
+      await supabase.from('programs').upsert({
+        user_id: userId,
+        data: program,
+        updated_at: new Date().toISOString(),
+      });
+    } catch {
+      enqueue({ type: 'program', payload: program });
+    }
+  },
+
+  async generateProgram(answers: OnboardingAnswers): Promise<Program> {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const { data, error } = await supabase.functions.invoke('generate-program', {
+      body: { answers },
+    });
+
+    if (error) throw error;
+    if (!data?.program) throw new Error('Invalid response from program generator');
+
+    return data.program as Program;
   },
 
   // ── Sync queue processing ──

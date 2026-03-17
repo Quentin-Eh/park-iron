@@ -30,6 +30,7 @@ export const DataStore = {
 
   getProgram(): Program { return get<Program>('program') || DEFAULT_PROGRAM; },
   saveProgram(p: Program) { set('program', p); },
+  hasProgram(): boolean { return localStorage.getItem('pi-program') !== null; },
 
   getVersion(): number { return get<number>('version') || 0; },
   setVersion(v: number) { set('version', v); },
@@ -63,10 +64,10 @@ export const DataStore = {
   migrate() {
     const currentVersion = this.getVersion();
     if (currentVersion >= 1) return;
+    const hadOldHistory = localStorage.getItem('pi-history') !== null;
     try {
-      const raw = localStorage.getItem('pi-history');
-      if (raw) {
-        const oldHistory = JSON.parse(raw) as Session[];
+      if (hadOldHistory) {
+        const oldHistory = JSON.parse(localStorage.getItem('pi-history')!) as Session[];
         if (Array.isArray(oldHistory) && oldHistory.length > 0) {
           const existing = this.getSessions();
           if (existing.length === 0) {
@@ -75,7 +76,8 @@ export const DataStore = {
         }
       }
     } catch { /* ignore corrupt data */ }
-    if (!get<Program>('program')) {
+    const hasExistingData = hadOldHistory || this.getSessions().length > 0;
+    if (!get<Program>('program') && hasExistingData) {
       this.saveProgram(DEFAULT_PROGRAM);
     }
     this.setVersion(1);

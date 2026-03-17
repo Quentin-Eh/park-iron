@@ -11,9 +11,10 @@ interface Props {
   user: User | null;
   onSignOut: () => void;
   isConfigured: boolean;
+  onCustomize: () => void;
 }
 
-export function HomeScreen({ program, history, onStartSession, onShowHistory, user, onSignOut, isConfigured }: Props) {
+export function HomeScreen({ program, history, onStartSession, onShowHistory, user, onSignOut, isConfigured, onCustomize }: Props) {
   const schedule = program.schedule || [
     { dayKey: 'A', weekday: 1 },
     { dayKey: 'B', weekday: 3 },
@@ -89,6 +90,16 @@ export function HomeScreen({ program, history, onStartSession, onShowHistory, us
           </span>
         </div>
         <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xl)' }}>→</span>
+      </button>
+
+      <button onClick={onCustomize}
+        style={{
+          background: 'none', border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-xl)', padding: 'var(--space-3) var(--space-4)',
+          color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', fontWeight: 600,
+          cursor: 'pointer', width: '100%', marginTop: 'var(--space-3)',
+        }}>
+        Customize your program
       </button>
     </div>
   );

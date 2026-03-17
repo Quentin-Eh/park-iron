@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Program } from '../types/program.ts';
 import { DataStore } from '../data/store.ts';
+import { DEFAULT_PROGRAM } from '../data/default-program.ts';
 import { useToast } from '../hooks/useToast.ts';
 import { useAuth } from '../hooks/useAuth.ts';
 import { useSession } from '../hooks/useSession.ts';
@@ -11,9 +12,11 @@ import { HomeScreen } from './HomeScreen.tsx';
 import { SessionScreen } from './SessionScreen.tsx';
 import { HistoryScreen } from './HistoryScreen.tsx';
 import { CoachingScreen } from './CoachingScreen.tsx';
+import { OnboardingScreen } from './OnboardingScreen.tsx';
 
 export function App() {
-  const [program] = useState<Program>(() => DataStore.getProgram());
+  const [program, setProgram] = useState<Program>(() => DataStore.getProgram());
+  const [showOnboarding, setShowOnboarding] = useState(() => !DataStore.hasProgram());
   const { toast, showToast } = useToast();
   const auth = useAuth();
   const session = useSession(program, showToast, auth.user?.id ?? null);
@@ -29,6 +32,19 @@ export function App() {
           onMagicLink={auth.signInWithMagicLink}
           onGoogle={auth.signInWithGoogle}
           onSkip={auth.skipAuth}
+        />
+      </>
+    );
+  }
+
+  if (showOnboarding) {
+    return (
+      <>
+        {toast && <Toast message={toast} />}
+        <OnboardingScreen
+          onComplete={(p) => { setProgram(p); setShowOnboarding(false); }}
+          onSkip={() => { DataStore.saveProgram(DEFAULT_PROGRAM); setProgram(DEFAULT_PROGRAM); setShowOnboarding(false); }}
+          userId={auth.user?.id ?? null}
         />
       </>
     );
@@ -56,6 +72,7 @@ export function App() {
           user={auth.user}
           onSignOut={auth.signOut}
           isConfigured={auth.isConfigured}
+          onCustomize={() => setShowOnboarding(true)}
         />
       )}
 

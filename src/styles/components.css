@@ -687,3 +687,118 @@
 .history-coaching p:last-child {
   margin-bottom: 0;
 }
+
+/* Onboarding */
+.onboarding-screen {
+  min-height: 100dvh;
+  padding: var(--space-8) var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+}
+.onboarding-loading {
+  align-items: center;
+  justify-content: center;
+}
+.onboarding-dots {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+}
+.onboarding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  transition: background .2s, transform .2s;
+}
+.onboarding-dot.active {
+  background: linear-gradient(135deg, #FF6B35, #4ECDC4);
+  transform: scale(1.25);
+}
+.onboarding-dot.done {
+  background: rgba(var(--color-white), 0.2);
+}
+.onboarding-title {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-5);
+}
+.onboarding-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.onboarding-chip {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--text-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  -webkit-tap-highlight-color: transparent;
+}
+.onboarding-chip:active {
+  transform: scale(0.97);
+}
+.onboarding-chip.selected {
+  border-color: #4ECDC4;
+  background: rgba(78, 205, 196, 0.1);
+}
+.onboarding-chip-check {
+  color: #4ECDC4;
+  font-size: var(--text-sm);
+  font-weight: 800;
+}
+
+/* Onboarding review */
+.onboarding-review-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+.onboarding-review-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--space-4) var(--space-4) var(--space-4) 0;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  gap: var(--space-3);
+  -webkit-tap-highlight-color: transparent;
+}
+.onboarding-review-header:active {
+  opacity: 0.7;
+}
+.onboarding-review-bar {
+  width: 4px;
+  height: 48px;
+  border-radius: 0 4px 4px 0;
+  flex-shrink: 0;
+}
+.onboarding-review-body {
+  padding: 0 var(--space-4) var(--space-4);
+}
+
+/* Onboarding loading spinner */
+.onboarding-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--border-default);
+  border-top-color: #4ECDC4;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
