@@ -78,4 +78,8 @@
   --touch-sm: 36px;
   --touch-md: 44px;
   --touch-lg: 56px;
+
+  /* Breathing / flow-state */
+  --ease-breathe: cubic-bezier(0.4, 0, 0.6, 1);
+  --duration-breathe: 8s;
 }

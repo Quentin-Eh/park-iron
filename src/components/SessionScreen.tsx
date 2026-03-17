@@ -1,12 +1,11 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import type { Step } from '../types/step.ts';
 import type { Day } from '../types/program.ts';
 import type { SessionData } from '../types/session.ts';
 import { ExercisePhase } from './ExercisePhase.tsx';
 import { RestPhase } from './RestPhase.tsx';
 import { ProgressionDrawer } from './ProgressionDrawer.tsx';
-import { SessionOverview } from './SessionOverview.tsx';
-import { ExerciseGuide } from './ExerciseGuide.tsx';
+import { SessionMap } from './SessionMap.tsx';
 import { useSwipe } from '../hooks/useSwipe.ts';
 import type { SessionPhase } from '../hooks/useSession.ts';
 
@@ -23,7 +22,7 @@ interface Props {
   currentReps: number;
   progLevel: number;
   showProg: boolean;
-  viewMode: 'step' | 'overview' | 'exercises';
+  viewMode: 'step' | 'map';
   sessionData: SessionData;
   getProgLevel: (exId: string) => number;
   onSetReps: (step: Step, val: number) => void;
@@ -32,7 +31,7 @@ interface Props {
   onStepDone: () => void;
   onRestComplete: () => void;
   onBack: () => void;
-  onSetViewMode: (mode: 'step' | 'overview' | 'exercises') => void;
+  onSetViewMode: (mode: 'step' | 'map') => void;
 }
 
 export function SessionScreen({
@@ -41,18 +40,23 @@ export function SessionScreen({
   getProgLevel, onSetReps, onShowProg, onSetProgLevel, onStepDone, onRestComplete, onBack,
   onSetViewMode,
 }: Props) {
-  const VIEW_ORDER = ['step', 'overview', 'exercises'] as const;
+  const mapRef = useRef<HTMLDivElement>(null);
 
-  const handleSwipe = useCallback((dir: 'left' | 'right') => {
-    const idx = VIEW_ORDER.indexOf(viewMode);
-    if (dir === 'left' && idx < VIEW_ORDER.length - 1) {
-      onSetViewMode(VIEW_ORDER[idx + 1]);
-    } else if (dir === 'right' && idx > 0) {
-      onSetViewMode(VIEW_ORDER[idx - 1]);
+  const handleSwipe = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
+    if (dir === 'up' && viewMode === 'step') {
+      onSetViewMode('map');
+    } else if (dir === 'down' && viewMode === 'map') {
+      // Only close map if scrolled to top
+      const el = mapRef.current;
+      if (!el || el.scrollTop <= 5) {
+        onSetViewMode('step');
+      }
     }
   }, [viewMode, onSetViewMode]);
 
   const swipe = useSwipe(handleSwipe);
+
+  const isMap = viewMode === 'map';
 
   return (
     <div data-day={activeDay} {...swipe}>
@@ -63,61 +67,14 @@ export function SessionScreen({
         }} />
       </div>
       <div className="step-counter">
-        {viewMode !== 'step' ? (
-          <button
-            className="overview-toggle"
-            onClick={() => onSetViewMode('step')}
-            aria-label="Show current step"
-          >
-            ←
-          </button>
-        ) : (
-          <>
-            <button
-              className="overview-toggle"
-              onClick={() => onSetViewMode('overview')}
-              aria-label="Show overview"
-            >
-              ☰
-            </button>
-            <button
-              className="overview-toggle"
-              onClick={() => onSetViewMode('exercises')}
-              aria-label="Show exercise guide"
-            >
-              📋
-            </button>
-          </>
-        )}
         {currentStep + 1} / {totalSteps}
-        <div className="view-dots">
-          {VIEW_ORDER.map((v) => (
-            <span
-              key={v}
-              className={`view-dot ${v === viewMode ? 'active' : ''}`}
-            />
-          ))}
-        </div>
       </div>
 
-      {viewMode === 'overview' && (
-        <SessionOverview
-          steps={steps}
-          currentStep={currentStep}
-          sessionData={sessionData}
-          onBackToStep={() => onSetViewMode('step')}
-        />
-      )}
-
-      {viewMode === 'exercises' && (
-        <ExerciseGuide
-          day={day}
-          getProgLevel={getProgLevel}
-          onBackToStep={() => onSetViewMode('step')}
-        />
-      )}
-
-      <div style={{ display: viewMode !== 'step' ? 'none' : undefined }}>
+      {/* Step layer — keep mounted so RestPhase timer keeps ticking */}
+      <div
+        className={`zoom-layer step-layer ${isMap ? 'zoom-out' : 'zoom-active'}`}
+        aria-hidden={isMap}
+      >
         {sessionPhase === 'exercise' && (
           <ExercisePhase
             step={step}
@@ -125,6 +82,7 @@ export function SessionScreen({
             isNewSection={isNewSection}
             currentReps={currentReps}
             progLevel={progLevel}
+            sessionData={sessionData}
             onSetReps={onSetReps}
             onShowProg={() => onShowProg(true)}
             onDone={onStepDone}
@@ -149,6 +107,30 @@ export function SessionScreen({
             onClose={() => onShowProg(false)}
           />
         )}
+
+        {/* Swipe-up affordance */}
+        {!isMap && (
+          <div className="swipe-up-hint" onClick={() => onSetViewMode('map')}>
+            <div className="swipe-up-chevron" />
+            <span>Session map</span>
+          </div>
+        )}
+      </div>
+
+      {/* Map layer */}
+      <div
+        ref={mapRef}
+        className={`zoom-layer map-layer ${isMap ? 'zoom-active' : 'zoom-in'}`}
+        aria-hidden={!isMap}
+      >
+        <SessionMap
+          day={day}
+          steps={steps}
+          currentStep={currentStep}
+          sessionData={sessionData}
+          getProgLevel={getProgLevel}
+          onClose={() => onSetViewMode('step')}
+        />
       </div>
     </div>
   );

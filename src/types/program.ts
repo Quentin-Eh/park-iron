@@ -5,6 +5,7 @@ export interface Exercise {
   notes?: string;
   target: string;
   isHold?: boolean;
+  isUnilateral?: boolean;
   progression: string[];
 }
 

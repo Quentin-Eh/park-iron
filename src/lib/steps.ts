@@ -1,5 +1,54 @@
 import type { Day } from '../types/program.ts';
 import type { Step } from '../types/step.ts';
+import type { Exercise } from '../types/program.ts';
+
+function makeStep(
+  exercise: Exercise,
+  exIdx: number,
+  round: number,
+  totalRounds: number,
+  sectionLabel: string,
+  sectionType: 'superset' | 'straight',
+  restAfter: number,
+  isLastSet: boolean,
+  side?: 'L' | 'R',
+): Step {
+  return {
+    exercise,
+    exerciseIndex: exIdx,
+    setIndex: round,
+    setNumber: round + 1,
+    totalSets: totalRounds,
+    sectionLabel,
+    sectionType,
+    roundNumber: round + 1,
+    totalRounds,
+    restAfter,
+    isLastSet,
+    side,
+  };
+}
+
+function pushExerciseStep(
+  steps: Step[],
+  exercise: Exercise,
+  exIdx: number,
+  round: number,
+  totalRounds: number,
+  sectionLabel: string,
+  sectionType: 'superset' | 'straight',
+  restAfter: number,
+  isLastSet: boolean,
+) {
+  if (exercise.isUnilateral) {
+    // L step: no rest between legs
+    steps.push(makeStep(exercise, exIdx, round, totalRounds, sectionLabel, sectionType, 0, false, 'L'));
+    // R step: gets the real rest and isLastSet
+    steps.push(makeStep(exercise, exIdx, round, totalRounds, sectionLabel, sectionType, restAfter, isLastSet, 'R'));
+  } else {
+    steps.push(makeStep(exercise, exIdx, round, totalRounds, sectionLabel, sectionType, restAfter, isLastSet));
+  }
+}
 
 export function generateSteps(day: Day): Step[] {
   const steps: Step[] = [];
@@ -12,19 +61,17 @@ export function generateSteps(day: Day): Step[] {
         for (let exIdx = 0; exIdx < section.exercises.length; exIdx++) {
           const isLastOfSection = round === section.rounds - 1 && exIdx === section.exercises.length - 1;
           const isLastOfWorkout = isLastSection && isLastOfSection;
-          steps.push({
-            exercise: section.exercises[exIdx],
-            exerciseIndex: exIdx,
-            setIndex: round,
-            setNumber: round + 1,
-            totalSets: section.rounds,
-            sectionLabel: section.label,
-            sectionType: 'superset',
-            roundNumber: round + 1,
-            totalRounds: section.rounds,
-            restAfter: isLastOfWorkout ? 0 : section.rest,
-            isLastSet: round === section.rounds - 1,
-          });
+          pushExerciseStep(
+            steps,
+            section.exercises[exIdx],
+            exIdx,
+            round,
+            section.rounds,
+            section.label,
+            'superset',
+            isLastOfWorkout ? 0 : section.rest,
+            round === section.rounds - 1,
+          );
         }
       }
     } else {
@@ -32,19 +79,17 @@ export function generateSteps(day: Day): Step[] {
         for (let round = 0; round < section.rounds; round++) {
           const isLastOfSection = exIdx === section.exercises.length - 1 && round === section.rounds - 1;
           const isLastOfWorkout = isLastSection && isLastOfSection;
-          steps.push({
-            exercise: section.exercises[exIdx],
-            exerciseIndex: exIdx,
-            setIndex: round,
-            setNumber: round + 1,
-            totalSets: section.rounds,
-            sectionLabel: section.label,
-            sectionType: 'straight',
-            roundNumber: round + 1,
-            totalRounds: section.rounds,
-            restAfter: isLastOfWorkout ? 0 : section.rest,
-            isLastSet: round === section.rounds - 1,
-          });
+          pushExerciseStep(
+            steps,
+            section.exercises[exIdx],
+            exIdx,
+            round,
+            section.rounds,
+            section.label,
+            'straight',
+            isLastOfWorkout ? 0 : section.rest,
+            round === section.rounds - 1,
+          );
         }
       }
     }

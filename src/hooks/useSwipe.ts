@@ -1,9 +1,8 @@
 import { useRef, useCallback } from 'react';
 
-type Direction = 'left' | 'right';
+type Direction = 'left' | 'right' | 'up' | 'down';
 
 const MIN_DISTANCE = 50;
-const MAX_VERTICAL_RATIO = 1.5; // allow fairly diagonal swipes
 
 export function useSwipe(onSwipe: (dir: Direction) => void) {
   const startX = useRef(0);
@@ -20,10 +19,15 @@ export function useSwipe(onSwipe: (dir: Direction) => void) {
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
 
-    if (absDx < MIN_DISTANCE) return;
-    if (absDy > absDx * MAX_VERTICAL_RATIO) return;
+    if (absDx < MIN_DISTANCE && absDy < MIN_DISTANCE) return;
 
-    onSwipe(dx < 0 ? 'left' : 'right');
+    if (absDy > absDx) {
+      // Vertical swipe
+      onSwipe(dy < 0 ? 'up' : 'down');
+    } else {
+      // Horizontal swipe
+      onSwipe(dx < 0 ? 'left' : 'right');
+    }
   }, [onSwipe]);
 
   return { onTouchStart, onTouchEnd };

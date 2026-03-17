@@ -13,6 +13,28 @@
   50% { opacity: .5; }
 }
 
+@keyframes energyPulse {
+  0%, 100% { box-shadow: 0 0 8px var(--day-color); }
+  50% { box-shadow: 0 0 20px var(--day-color), 0 0 40px color-mix(in srgb, var(--day-color) 40%, transparent); }
+}
+
+@keyframes energyFlashIn {
+  0% { opacity: 0; transform: scale(0.8); }
+  20% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.05); }
+}
+
+@keyframes chevronBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes breathePulse {
+  0%, 100% { box-shadow: 0 0 8px var(--day-color); }
+  50% { box-shadow: 0 0 24px var(--day-color), 0 0 48px color-mix(in srgb, var(--day-color) 35%, transparent); }
+}
+
 .fade-in { animation: fadeIn .3s ease both; }
 .slide-up { animation: slideUp .3s ease both; }
 .pulse { animation: pulse 1s ease infinite; }

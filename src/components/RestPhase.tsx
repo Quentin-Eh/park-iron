@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Step } from '../types/step.ts';
-import { fmt } from '../lib/format.ts';
-import { beep } from '../lib/audio.ts';
-import { heavyFeedback } from '../lib/haptics.ts';
+import { gentleChime } from '../lib/audio.ts';
+import { notifyFeedback } from '../lib/haptics.ts';
 
 interface Props {
   duration: number;
@@ -12,59 +11,76 @@ interface Props {
 
 export function RestPhase({ duration, nextStep, onComplete }: Props) {
   const [rem, setRem] = useState(duration);
+  const [showFlash, setShowFlash] = useState(true);
+  const [finishing, setFinishing] = useState(false);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  const playBeep = useCallback((freq: number) => beep(freq), []);
+  // Hide duration flash after 1.5s
+  useEffect(() => {
+    const t = setTimeout(() => setShowFlash(false), 1500);
+    return () => clearTimeout(t);
+  }, []);
 
+  const handleFinish = useCallback(() => {
+    gentleChime();
+    notifyFeedback();
+    setFinishing(true);
+    setTimeout(() => onCompleteRef.current(), 600);
+  }, []);
+
+  // Countdown timer
   useEffect(() => {
     const iv = setInterval(() => {
-      setRem(r => {
-        if (r <= 1) { clearInterval(iv); playBeep(1200); heavyFeedback(); onCompleteRef.current(); return 0; }
-        if (r === 4) playBeep(660);
+      setRem((r) => {
+        if (r <= 1) {
+          clearInterval(iv);
+          handleFinish();
+          return 0;
+        }
         return r - 1;
       });
     }, 1000);
     return () => clearInterval(iv);
-  }, [playBeep]);
+  }, [handleFinish]);
 
   const pct = ((duration - rem) / duration) * 100;
-  const low = rem <= 5 && rem > 0;
+  const nearEnd = rem <= 5 && rem > 0;
 
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      minHeight: '80dvh', padding: '60px var(--space-5) var(--space-5)',
-    }}>
-      <div style={{ position: 'relative', width: 180, height: 180, marginBottom: 'var(--space-8)' }}>
-        <svg viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border-default)" strokeWidth="6" />
-          <circle cx="90" cy="90" r="80" fill="none" stroke="var(--day-color)" strokeWidth="6"
-            strokeDasharray={`${pct * 5.027} 502.65`} strokeLinecap="round"
-            style={{ transition: 'stroke-dasharray .3s' }} />
-        </svg>
-        <div style={{
-          position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
-          justifyContent: 'center', flexDirection: 'column',
-        }}>
-          <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: 'var(--text-display)', fontWeight: 700,
-            color: low ? 'var(--day-color)' : 'var(--text-primary)',
-          }} className={low ? 'pulse' : ''}>
-            {fmt(rem)}
-          </span>
-          <span className="text-body" style={{ marginTop: 'var(--space-1)' }}>REST</span>
+    <div className={`energy-rest${finishing ? ' finishing' : ''}`}>
+      {/* Duration flash */}
+      <div className={`energy-flash ${showFlash ? 'visible' : ''}`}>
+        {duration}s rest
+      </div>
+
+      {/* Energy bar */}
+      <div className="energy-bar-container">
+        <div className="energy-bar-track">
+          <div
+            className={`energy-bar-fill${nearEnd ? ' brightening' : ''}`}
+            style={{ height: `${pct}%` }}
+          />
+          <div
+            className="energy-bar-glow"
+            style={{ bottom: `${pct}%` }}
+          />
         </div>
       </div>
 
       {nextStep && (
-        <div style={{
-          background: 'var(--bg-surface)', borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-4) var(--space-5)', width: '100%', maxWidth: 320,
-          marginBottom: 'var(--space-6)', textAlign: 'center',
-        }}>
-          <p className="text-meta" style={{ color: 'var(--text-secondary)', marginBottom: '6px' }}>Up next</p>
-          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>{nextStep.exercise.name}</p>
+        <div className="energy-next">
+          <p className="text-meta" style={{ color: 'var(--text-secondary)', marginBottom: '6px' }}>
+            Up next
+          </p>
+          <p style={{ fontSize: 'var(--text-lg)', fontWeight: 700 }}>
+            {nextStep.exercise.name}
+          </p>
+          {nextStep.side && (
+            <p style={{ color: 'var(--day-color)', fontWeight: 700, fontSize: 'var(--text-base)', marginTop: 2 }}>
+              {nextStep.side === 'L' ? 'Left leg' : 'Right leg'}
+            </p>
+          )}
           <p className="text-body" style={{ marginTop: 2 }}>
             Set {nextStep.setNumber} of {nextStep.totalSets}
           </p>

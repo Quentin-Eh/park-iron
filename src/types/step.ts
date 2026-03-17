@@ -12,4 +12,5 @@ export interface Step {
   totalRounds: number;
   restAfter: number;
   isLastSet: boolean;
+  side?: 'L' | 'R';
 }

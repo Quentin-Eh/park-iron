@@ -21,7 +21,7 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
   const [currentStep, setCurrentStep] = useState(0);
   const [sessionPhase, setSessionPhase] = useState<SessionPhase>('exercise');
   const [showProg, setShowProg] = useState(false);
-  const [viewMode, setViewMode] = useState<'step' | 'overview' | 'exercises'>('step');
+  const [viewMode, setViewMode] = useState<'step' | 'map'>('step');
 
   const [pendingDraft, setPendingDraft] = useState<SessionDraft | null>(() => {
     const draft = DataStore.getDraft();
@@ -103,19 +103,25 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     setPendingDraft(null);
   }, []);
 
+  const getDataKey = useCallback((step: Step) => {
+    return step.exercise.id + (step.side ? `_${step.side}` : '');
+  }, []);
+
   const getStepReps = useCallback((step: Step | null): number => {
     if (!step) return 0;
-    const reps = sessionData[step.exercise.id] || new Array(step.totalSets).fill(0);
+    const key = getDataKey(step);
+    const reps = sessionData[key] || new Array(step.totalSets).fill(0);
     return reps[step.setIndex] || 0;
-  }, [sessionData]);
+  }, [sessionData, getDataKey]);
 
   const setStepReps = useCallback((step: Step | null, val: number) => {
     if (!step) return;
-    const reps = sessionData[step.exercise.id] || new Array(step.totalSets).fill(0);
+    const key = getDataKey(step);
+    const reps = sessionData[key] || new Array(step.totalSets).fill(0);
     const newReps = [...reps];
     newReps[step.setIndex] = val;
-    setSessionData(d => ({ ...d, [step.exercise.id]: newReps }));
-  }, [sessionData]);
+    setSessionData(d => ({ ...d, [key]: newReps }));
+  }, [sessionData, getDataKey]);
 
   const getProgLevel = useCallback((exId: string) => progressions[exId] || 0, [progressions]);
 
