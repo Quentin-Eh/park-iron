@@ -91,6 +91,13 @@ export const DataStore = {
       this.saveProgram(DEFAULT_PROGRAM);
       this.setVersion(2);
     }
+
+    // v2 → v3: revised program (new exercises, rep ranges, ordering)
+    if (currentVersion < 3) {
+      this.clearDraft();
+      this.saveProgram(DEFAULT_PROGRAM);
+      this.setVersion(3);
+    }
   },
 };
 

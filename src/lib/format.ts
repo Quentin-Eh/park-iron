@@ -14,8 +14,9 @@ export const WEEKDAY_NAMES = [
   'Thursday', 'Friday', 'Saturday',
 ] as const;
 
-/** Maps old v1 exercise IDs to display names for history rendering */
+/** Maps old exercise IDs to display names for history rendering */
 const LEGACY_EXERCISE_NAMES: Record<string, string> = {
+  // v1 exercise IDs
   ring_dips_a: 'Ring Dips',
   pullups_a: 'Pull-ups',
   archer_pushups: 'Archer Push-ups',
@@ -36,6 +37,21 @@ const LEGACY_EXERCISE_NAMES: Record<string, string> = {
   vsit: 'V-sit Hold',
   planche_lean: 'Pseudo-planche Lean',
   ring_support: 'Ring Support Hold',
+  // v2 exercise IDs
+  v2_dips_ua: 'Ring Dips',
+  v2_deep_pushups_ua: 'Deep Push-ups',
+  v2_pullups_ua: 'Pull-ups',
+  v2_ring_curls_ua: 'Ring Curls',
+  v2_pistols_la: 'Pistol Squats',
+  v2_nordics_la: 'Nordic Curl Negatives',
+  v2_leg_raises_la: 'Hanging Leg Raises',
+  v2_chinups_ub: 'Chin-ups',
+  v2_ring_rows_ub: 'Ring Rows',
+  v2_deep_pushups_ub: 'Deep Push-ups',
+  v2_ring_curls_ub: 'Ring Curls',
+  v2_bulgarians_lb: 'Bulgarian Split Squats',
+  v2_nordics_lb: 'Nordic Curl Negatives',
+  v2_vsit_lb: 'V-sit Hold',
 };
 
 /** Legacy day key → display label */
