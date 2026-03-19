@@ -166,7 +166,7 @@ export const SyncedStore = {
         user_id: userId,
         data: program,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'user_id' });
     } catch {
       enqueue({ type: 'program', payload: program });
     }
@@ -224,7 +224,7 @@ export const SyncedStore = {
               user_id: userId,
               data: item.payload,
               updated_at: new Date().toISOString(),
-            });
+            }, { onConflict: 'user_id' });
             break;
           }
         }
@@ -288,10 +288,11 @@ export const SyncedStore = {
 
       // Migrate program
       const localProgram = DataStore.getProgram();
-      await supabase.from('programs').insert({
+      await supabase.from('programs').upsert({
         user_id: userId,
         data: localProgram,
-      });
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
 
       localStorage.setItem('pi-migrated', 'true');
     } catch {

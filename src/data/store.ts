@@ -63,24 +63,34 @@ export const DataStore = {
 
   migrate() {
     const currentVersion = this.getVersion();
-    if (currentVersion >= 1) return;
-    const hadOldHistory = localStorage.getItem('pi-history') !== null;
-    try {
-      if (hadOldHistory) {
-        const oldHistory = JSON.parse(localStorage.getItem('pi-history')!) as Session[];
-        if (Array.isArray(oldHistory) && oldHistory.length > 0) {
-          const existing = this.getSessions();
-          if (existing.length === 0) {
-            this.saveSessions(oldHistory);
+
+    // v0 → v1: migrate old pi-history key
+    if (currentVersion < 1) {
+      const hadOldHistory = localStorage.getItem('pi-history') !== null;
+      try {
+        if (hadOldHistory) {
+          const oldHistory = JSON.parse(localStorage.getItem('pi-history')!) as Session[];
+          if (Array.isArray(oldHistory) && oldHistory.length > 0) {
+            const existing = this.getSessions();
+            if (existing.length === 0) {
+              this.saveSessions(oldHistory);
+            }
           }
         }
+      } catch { /* ignore corrupt data */ }
+      const hasExistingData = hadOldHistory || this.getSessions().length > 0;
+      if (!get<Program>('program') && hasExistingData) {
+        this.saveProgram(DEFAULT_PROGRAM);
       }
-    } catch { /* ignore corrupt data */ }
-    const hasExistingData = hadOldHistory || this.getSessions().length > 0;
-    if (!get<Program>('program') && hasExistingData) {
-      this.saveProgram(DEFAULT_PROGRAM);
+      this.setVersion(1);
     }
-    this.setVersion(1);
+
+    // v1 → v2: new 4-day program, clear stale draft
+    if (currentVersion < 2) {
+      this.clearDraft();
+      this.saveProgram(DEFAULT_PROGRAM);
+      this.setVersion(2);
+    }
   },
 };
 

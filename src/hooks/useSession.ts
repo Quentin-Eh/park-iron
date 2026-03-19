@@ -6,7 +6,6 @@ import { generateSteps } from '../lib/steps.ts';
 import { DataStore } from '../data/store.ts';
 import { SyncedStore } from '../data/synced-store.ts';
 
-export type SessionPhase = 'exercise' | 'resting';
 export type Screen = 'home' | 'session' | 'history' | 'coaching';
 
 export function useSession(program: Program, showToast: (msg: string) => void, userId: string | null) {
@@ -19,7 +18,6 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
 
   const [steps, setSteps] = useState<Step[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [sessionPhase, setSessionPhase] = useState<SessionPhase>('exercise');
   const [showProg, setShowProg] = useState(false);
   const [viewMode, setViewMode] = useState<'step' | 'map'>('step');
   const [lastCompletedSession, setLastCompletedSession] = useState<Session | null>(null);
@@ -75,8 +73,8 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     const newSteps = generateSteps(day);
     setSteps(newSteps);
     setCurrentStep(0);
-    setSessionPhase('exercise');
     setShowProg(false);
+    setViewMode('step');
     setActiveDay(dayKey);
     setSessionData({});
     setSessionStart(new Date().toISOString());
@@ -90,8 +88,8 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     const newSteps = generateSteps(day);
     setSteps(newSteps);
     setCurrentStep(pendingDraft.currentStep || 0);
-    setSessionPhase('exercise');
     setShowProg(false);
+    setViewMode('step');
     setActiveDay(pendingDraft.day);
     setSessionData(pendingDraft.data || {});
     setSessionStart(pendingDraft.start);
@@ -104,25 +102,21 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     setPendingDraft(null);
   }, []);
 
-  const getDataKey = useCallback((step: Step) => {
-    return step.exercise.id + (step.side ? `_${step.side}` : '');
-  }, []);
-
-  const getStepReps = useCallback((step: Step | null): number => {
+  const getStepReps = useCallback((step: Step | null, side?: 'L' | 'R'): number => {
     if (!step) return 0;
-    const key = getDataKey(step);
+    const key = step.exercise.id + (side ? `_${side}` : '');
     const reps = sessionData[key] || new Array(step.totalSets).fill(0);
     return reps[step.setIndex] || 0;
-  }, [sessionData, getDataKey]);
+  }, [sessionData]);
 
-  const setStepReps = useCallback((step: Step | null, val: number) => {
+  const setStepReps = useCallback((step: Step | null, val: number, side?: 'L' | 'R') => {
     if (!step) return;
-    const key = getDataKey(step);
+    const key = step.exercise.id + (side ? `_${side}` : '');
     const reps = sessionData[key] || new Array(step.totalSets).fill(0);
     const newReps = [...reps];
     newReps[step.setIndex] = val;
     setSessionData(d => ({ ...d, [key]: newReps }));
-  }, [sessionData, getDataKey]);
+  }, [sessionData]);
 
   const getProgLevel = useCallback((exId: string) => progressions[exId] || 0, [progressions]);
 
@@ -173,37 +167,31 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     setLastCompletedSession(null);
   }, []);
 
+  const updateSessionFeedback = useCallback((sessionId: number, feedback: string) => {
+    setHistory(h => {
+      const updated = h.map(s => s.id === sessionId ? { ...s, coachingFeedback: feedback } : s);
+      if (userId) {
+        SyncedStore.saveSession(userId, updated.find(s => s.id === sessionId)!);
+      } else {
+        DataStore.saveSessions(updated);
+      }
+      return updated;
+    });
+  }, [userId]);
+
   const handleStepDone = useCallback(() => {
     setShowProg(false);
-    const step = steps[currentStep];
-    if (step.restAfter > 0) {
-      setSessionPhase('resting');
-    } else if (currentStep < steps.length - 1) {
+    if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
-      setSessionPhase('exercise');
     } else {
       finishSession();
     }
   }, [steps, currentStep, finishSession]);
 
-  const handleRestComplete = useCallback(() => {
-    setCurrentStep(prev => {
-      const next = prev + 1;
-      if (next < steps.length) {
-        setSessionPhase('exercise');
-        return next;
-      }
-      return prev;
-    });
-  }, [steps.length]);
-
   const handleSessionBack = useCallback(() => {
     setShowProg(false);
-    if (sessionPhase === 'resting') {
-      setSessionPhase('exercise');
-    } else if (currentStep > 0) {
+    if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
-      setSessionPhase('exercise');
     } else {
       if (confirm('End session without saving?')) {
         DataStore.clearDraft();
@@ -211,12 +199,11 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
         setActiveDay(null);
       }
     }
-  }, [sessionPhase, currentStep]);
+  }, [currentStep]);
 
   const day = activeDay ? program.days[activeDay] : null;
   const step = (screen === 'session' && steps.length > 0 && currentStep < steps.length)
     ? steps[currentStep] : null;
-  const nextStep = (step && currentStep < steps.length - 1) ? steps[currentStep + 1] : null;
   const prevStep = (step && currentStep > 0) ? steps[currentStep - 1] : null;
   const isNewSection = !!(step && prevStep && step.sectionLabel !== prevStep.sectionLabel);
   const currentReps = getStepReps(step);
@@ -225,12 +212,12 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
     screen, setScreen,
     activeDay, day,
     sessionData, history, setHistory, progressions, setProgressions,
-    steps, currentStep, sessionPhase, showProg, setShowProg,
+    steps, currentStep, showProg, setShowProg,
     viewMode, setViewMode,
-    pendingDraft, step, nextStep, isNewSection, currentReps,
+    pendingDraft, step, isNewSection, currentReps,
     lastCompletedSession,
     startSession, resumeSession, discardDraft,
     getStepReps, setStepReps, getProgLevel, setProgLevel,
-    finishSession, dismissCoaching, handleStepDone, handleRestComplete, handleSessionBack,
+    finishSession, dismissCoaching, updateSessionFeedback, handleStepDone, handleSessionBack,
   } as const;
 }

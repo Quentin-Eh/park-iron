@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { Program } from '../types/program.ts';
 import type { Session } from '../types/session.ts';
-import { WEEKDAY_NAMES, fmtDate, findExerciseName } from '../lib/format.ts';
+import { fmtDate, findExerciseName, findDayName } from '../lib/format.ts';
 import { DataStore } from '../data/store.ts';
 
 interface Props {
@@ -16,11 +16,7 @@ interface Props {
 export function HistoryScreen({ program, history, setHistory, setProgressions, showToast, onBack }: Props) {
   const importRef = useRef<HTMLInputElement>(null);
 
-  const schedule = program.schedule || [
-    { dayKey: 'A', weekday: 1 },
-    { dayKey: 'B', weekday: 3 },
-    { dayKey: 'C', weekday: 5 },
-  ];
+  const schedule = program.schedule || [];
 
   const exportAll = () => {
     const blob = DataStore.exportAll();
@@ -68,18 +64,10 @@ export function HistoryScreen({ program, history, setHistory, setProgressions, s
       </div>
 
       <div style={{ display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)' }}>
-        <button onClick={exportAll} className="btn-sm" style={{
-          flex: 1, padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)',
-          border: '1px solid rgba(78,205,196,.3)', background: 'rgba(78,205,196,.08)',
-          color: '#4ECDC4', fontSize: 'var(--text-base)',
-        }}>
+        <button onClick={exportAll} className="btn-action">
           Export
         </button>
-        <button onClick={() => importRef.current?.click()} className="btn-sm" style={{
-          flex: 1, padding: 'var(--space-3)', borderRadius: 'var(--radius-lg)',
-          border: '1px solid rgba(78,205,196,.3)', background: 'rgba(78,205,196,.08)',
-          color: '#4ECDC4', fontSize: 'var(--text-base)',
-        }}>
+        <button onClick={() => importRef.current?.click()} className="btn-action">
           Import
         </button>
         <input ref={importRef} type="file" accept=".json" onChange={handleImport} style={{ display: 'none' }} />
@@ -97,10 +85,7 @@ export function HistoryScreen({ program, history, setHistory, setProgressions, s
           <p style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-md)' }}>No sessions yet. Go train!</p>
         </div>
       ) : history.map(entry => {
-        const d = program.days[entry.day];
-        if (!d) return null;
-        const sched = schedule.find(s => s.dayKey === entry.day);
-        const dayName = sched ? WEEKDAY_NAMES[sched.weekday] : d.name;
+        const dayName = findDayName(program, entry.day, schedule);
         const totalReps = Object.values(entry.exercises).reduce(
           (a, r) => a + r.reduce((b, v) => b + v, 0), 0
         );

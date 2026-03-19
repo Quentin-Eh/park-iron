@@ -7,10 +7,5 @@ export interface Step {
   setNumber: number;
   totalSets: number;
   sectionLabel: string;
-  sectionType: 'superset' | 'straight';
-  roundNumber: number;
-  totalRounds: number;
-  restAfter: number;
-  isLastSet: boolean;
-  side?: 'L' | 'R';
+  isUnilateral: boolean;
 }

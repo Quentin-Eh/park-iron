@@ -1,4 +1,39 @@
 /* Day color theming */
+
+/* New v2 program days */
+[data-day="UA"] {
+  --day-color: #FF6B35;
+  --day-color-rgb: 255, 107, 53;
+  --day-bg: rgba(255, 107, 53, 0.08);
+  --day-bg-subtle: rgba(255, 107, 53, 0.15);
+  --day-border: rgba(255, 107, 53, 0.25);
+}
+
+[data-day="LA"] {
+  --day-color: #4ECDC4;
+  --day-color-rgb: 78, 205, 196;
+  --day-bg: rgba(78, 205, 196, 0.08);
+  --day-bg-subtle: rgba(78, 205, 196, 0.15);
+  --day-border: rgba(78, 205, 196, 0.25);
+}
+
+[data-day="UB"] {
+  --day-color: #A855F7;
+  --day-color-rgb: 168, 85, 247;
+  --day-bg: rgba(168, 85, 247, 0.08);
+  --day-bg-subtle: rgba(168, 85, 247, 0.15);
+  --day-border: rgba(168, 85, 247, 0.25);
+}
+
+[data-day="LB"] {
+  --day-color: #FF6B35;
+  --day-color-rgb: 255, 107, 53;
+  --day-bg: rgba(255, 107, 53, 0.08);
+  --day-bg-subtle: rgba(255, 107, 53, 0.15);
+  --day-border: rgba(255, 107, 53, 0.25);
+}
+
+/* Legacy v1 program days (for history entries) */
 [data-day="A"] {
   --day-color: #FF6B35;
   --day-color-rgb: 255, 107, 53;

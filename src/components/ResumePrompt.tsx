@@ -17,11 +17,7 @@ export function ResumePrompt({ draft, program, onResume, onDiscard }: Props) {
   const repsLogged = Object.values(draft.data || {}).reduce(
     (a, r) => a + r.reduce((b, v) => b + v, 0), 0
   );
-  const schedule = program.schedule || [
-    { dayKey: 'A', weekday: 1 },
-    { dayKey: 'B', weekday: 3 },
-    { dayKey: 'C', weekday: 5 },
-  ];
+  const schedule = program.schedule || [];
   const sched = schedule.find(s => s.dayKey === draft.day);
   const dayName = sched ? WEEKDAY_NAMES[sched.weekday] : day.name;
 

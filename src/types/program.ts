@@ -10,10 +10,8 @@ export interface Exercise {
 }
 
 export interface Section {
-  type: 'superset' | 'straight';
   label: string;
   rounds: number;
-  rest: number;
   exercises: Exercise[];
 }
 

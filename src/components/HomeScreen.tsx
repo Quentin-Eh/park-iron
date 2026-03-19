@@ -15,11 +15,7 @@ interface Props {
 }
 
 export function HomeScreen({ program, history, onStartSession, onShowHistory, user, onSignOut, isConfigured, onCustomize }: Props) {
-  const schedule = program.schedule || [
-    { dayKey: 'A', weekday: 1 },
-    { dayKey: 'B', weekday: 3 },
-    { dayKey: 'C', weekday: 5 },
-  ];
+  const schedule = program.schedule || [];
   const today = new Date().getDay();
   const todaySchedule = schedule.find(s => s.weekday === today);
 
@@ -27,11 +23,7 @@ export function HomeScreen({ program, history, onStartSession, onShowHistory, us
     <div style={{ padding: 'var(--space-5) var(--space-4)' }} className="fade-in">
       <div style={{ marginBottom: 'var(--space-8)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <h1 style={{
-            fontSize: 'var(--text-4xl)', fontWeight: 900, letterSpacing: -1.5,
-            background: 'linear-gradient(135deg,#FF6B35,#4ECDC4)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          }}>
+          <h1 className="logo-gradient" style={{ fontSize: 'var(--text-4xl)', letterSpacing: -1.5 }}>
             PARK IRON
           </h1>
           <p className="text-body" style={{ fontWeight: 500, marginTop: 'var(--space-1)' }}>

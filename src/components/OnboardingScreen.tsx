@@ -103,7 +103,7 @@ function ReviewScreen({
                         {section.label}
                       </div>
                       <div className="sec-meta" style={{ marginBottom: 'var(--space-2)' }}>
-                        {section.type === 'superset' ? 'Superset' : 'Straight'} &middot; {section.rounds} rounds &middot; {section.rest}s rest
+                        {section.rounds} sets
                       </div>
                       {section.exercises.map((ex, ei) => (
                         <div key={ei} style={{
@@ -254,12 +254,7 @@ export function OnboardingScreen({ onComplete, onSkip, userId }: Props) {
   return (
     <div className="onboarding-screen fade-in">
       <div style={{ marginBottom: 'var(--space-6)' }}>
-        <h1 style={{
-          fontSize: 'var(--text-3xl)', fontWeight: 900, letterSpacing: -1,
-          background: 'linear-gradient(135deg,#FF6B35,#4ECDC4)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          marginBottom: 'var(--space-1)',
-        }}>
+        <h1 className="logo-gradient" style={{ fontSize: 'var(--text-3xl)', letterSpacing: -1, marginBottom: 'var(--space-1)' }}>
           PARK IRON
         </h1>
         <p style={{ color: 'var(--text-body)', fontSize: 'var(--text-base)' }}>

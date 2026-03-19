@@ -8,10 +8,11 @@ interface Props {
   program: Program;
   userId: string;
   onDone: () => void;
+  onFeedbackReceived: (sessionId: number, feedback: string) => void;
 }
 
-export function CoachingScreen({ session, program, userId, onDone }: Props) {
-  const { feedback, loading, error, retry } = useCoaching(session, userId);
+export function CoachingScreen({ session, program, userId, onDone, onFeedbackReceived }: Props) {
+  const { feedback, loading, error, retry } = useCoaching(session, userId, onFeedbackReceived);
 
   const day = program.days[session.day];
   const schedule = program.schedule || [];

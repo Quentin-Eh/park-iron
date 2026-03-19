@@ -41,11 +41,9 @@ CREATE TABLE programs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   data JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
 );
-
--- AI coaching feedback (added after initial schema)
--- Run: ALTER TABLE sessions ADD COLUMN coaching_feedback TEXT;
 
 -- ═══════════════════════════════════════════════
 -- ROW LEVEL SECURITY

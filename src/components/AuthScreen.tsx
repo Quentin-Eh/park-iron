@@ -28,12 +28,7 @@ export function AuthScreen({ loading, error, onMagicLink, onGoogle, onSkip }: Pr
       justifyContent: 'center',
     }} className="fade-in">
       <div style={{ marginBottom: 'var(--space-8)', textAlign: 'center' }}>
-        <h1 style={{
-          fontSize: 'var(--text-4xl)', fontWeight: 900, letterSpacing: -1.5,
-          background: 'linear-gradient(135deg,#FF6B35,#4ECDC4)',
-          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-          marginBottom: 'var(--space-2)',
-        }}>
+        <h1 className="logo-gradient" style={{ fontSize: 'var(--text-4xl)', letterSpacing: -1.5, marginBottom: 'var(--space-2)' }}>
           PARK IRON
         </h1>
         <p className="text-body" style={{ fontWeight: 500 }}>

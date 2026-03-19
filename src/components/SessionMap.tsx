@@ -28,7 +28,7 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
   function getSetStatus(exId: string, side?: 'L' | 'R') {
     const dataKey = exId + (side ? `_${side}` : '');
     const reps = sessionData[dataKey] || [];
-    const exerciseSteps = steps.filter(s => s.exercise.id === exId && s.side === side);
+    const exerciseSteps = steps.filter(s => s.exercise.id === exId);
     return exerciseSteps.map((s) => {
       const stepIdx = steps.indexOf(s);
       const logged = reps[s.setIndex] ?? 0;
@@ -38,7 +38,6 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
     });
   }
 
-  // Check if a section contains the current step
   function isSectionCurrent(sectionLabel: string) {
     return currentStepObj?.sectionLabel === sectionLabel;
   }
@@ -57,11 +56,11 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
             <div className="session-map-section-header">
               <span className="session-map-section-label">{section.label}</span>
               <span className="session-map-section-meta">
-                {section.rounds}× · {section.rest}s rest
+                {section.rounds} sets
               </span>
             </div>
 
-            <div className={`session-map-cards ${section.type === 'superset' && section.exercises.length > 1 ? 'paired' : ''}`}>
+            <div className="session-map-cards">
               {section.exercises.map((ex) => {
                 const progLevel = getProgLevel(ex.id);
                 const progName = ex.progression[progLevel];

@@ -81,11 +81,9 @@ export function App() {
           activeDay={session.activeDay!}
           day={session.day!}
           step={session.step}
-          nextStep={session.nextStep}
           steps={session.steps}
           currentStep={session.currentStep}
           totalSteps={session.steps.length}
-          sessionPhase={session.sessionPhase}
           isNewSection={session.isNewSection}
           currentReps={session.currentReps}
           progLevel={session.getProgLevel(session.step.exercise.id)}
@@ -93,11 +91,11 @@ export function App() {
           viewMode={session.viewMode}
           sessionData={session.sessionData}
           getProgLevel={session.getProgLevel}
+          getStepReps={session.getStepReps}
           onSetReps={session.setStepReps}
           onShowProg={session.setShowProg}
           onSetProgLevel={session.setProgLevel}
           onStepDone={session.handleStepDone}
-          onRestComplete={session.handleRestComplete}
           onBack={session.handleSessionBack}
           onSetViewMode={session.setViewMode}
         />
@@ -109,6 +107,7 @@ export function App() {
           program={program}
           userId={auth.user!.id}
           onDone={session.dismissCoaching}
+          onFeedbackReceived={session.updateSessionFeedback}
         />
       )}
 

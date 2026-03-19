@@ -11,8 +11,9 @@ export default defineConfig({
       manifest: {
         name: 'Park Iron',
         short_name: 'Park Iron',
-        start_url: '.',
+        start_url: '/park-iron/',
         display: 'standalone',
+        categories: ['health', 'fitness'],
         background_color: '#0d0d1a',
         theme_color: '#0d0d1a',
         icons: [

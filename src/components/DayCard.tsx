@@ -12,6 +12,8 @@ interface Props {
 }
 
 export function DayCard({ dayKey, weekday, day, isToday, lastSession, onStart }: Props) {
+  const isLongKey = dayKey.length > 1;
+
   return (
     <button
       className="day-card"
@@ -45,7 +47,7 @@ export function DayCard({ dayKey, weekday, day, isToday, lastSession, onStart }:
         <div style={{
           width: 48, height: 48, borderRadius: 'var(--radius-xl)', background: 'var(--day-bg)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, fontWeight: 900, color: 'var(--day-color)', flexShrink: 0,
+          fontSize: isLongKey ? 18 : 24, fontWeight: 900, color: 'var(--day-color)', flexShrink: 0,
         }}>
           {dayKey}
         </div>
