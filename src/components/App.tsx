@@ -86,14 +86,11 @@ export function App() {
           totalSteps={session.steps.length}
           isNewSection={session.isNewSection}
           currentReps={session.currentReps}
-          progLevel={session.getProgLevel(session.step.exercise.id)}
-          showProg={session.showProg}
           viewMode={session.viewMode}
           sessionData={session.sessionData}
           getProgLevel={session.getProgLevel}
           getStepReps={session.getStepReps}
           onSetReps={session.setStepReps}
-          onShowProg={session.setShowProg}
           onSetProgLevel={session.setProgLevel}
           onStepDone={session.handleStepDone}
           onBack={session.handleSessionBack}

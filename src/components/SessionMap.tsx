@@ -9,10 +9,11 @@ interface Props {
   currentStep: number;
   sessionData: SessionData;
   getProgLevel: (exId: string) => number;
+  onSetProgLevel: (exId: string, level: number) => void;
   onClose: () => void;
 }
 
-export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel, onClose }: Props) {
+export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel, onSetProgLevel, onClose }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const currentRef = useRef<HTMLDivElement>(null);
   const currentStepObj = steps[currentStep] ?? null;
@@ -130,7 +131,12 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
                           {ex.progression.map((step, i) => {
                             const isCurr = i === progLevel;
                             return (
-                              <div key={i} className="session-map-prog-item">
+                              <button
+                                key={i}
+                                className="session-map-prog-item"
+                                onClick={() => onSetProgLevel(ex.id, i)}
+                                style={{ cursor: 'pointer' }}
+                              >
                                 <div
                                   className="session-map-prog-num"
                                   style={{
@@ -145,6 +151,7 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
                                     color: isCurr ? 'var(--text-primary)' : 'var(--text-muted)',
                                     fontWeight: isCurr ? 600 : 400,
                                     flex: 1,
+                                    textAlign: 'left',
                                   }}
                                 >
                                   {step}
@@ -152,7 +159,7 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
                                 {isCurr && (
                                   <span className="session-map-current-badge">CURRENT</span>
                                 )}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>

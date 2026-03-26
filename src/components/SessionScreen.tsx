@@ -3,7 +3,6 @@ import type { Step } from '../types/step.ts';
 import type { Day } from '../types/program.ts';
 import type { SessionData } from '../types/session.ts';
 import { ExercisePhase } from './ExercisePhase.tsx';
-import { ProgressionDrawer } from './ProgressionDrawer.tsx';
 import { SessionMap } from './SessionMap.tsx';
 import { useSwipe } from '../hooks/useSwipe.ts';
 
@@ -16,14 +15,11 @@ interface Props {
   totalSteps: number;
   isNewSection: boolean;
   currentReps: number;
-  progLevel: number;
-  showProg: boolean;
   viewMode: 'step' | 'map';
   sessionData: SessionData;
   getProgLevel: (exId: string) => number;
   getStepReps: (step: Step | null, side?: 'L' | 'R') => number;
   onSetReps: (step: Step | null, val: number, side?: 'L' | 'R') => void;
-  onShowProg: (show: boolean) => void;
   onSetProgLevel: (exId: string, level: number) => void;
   onStepDone: () => void;
   onBack: () => void;
@@ -32,8 +28,8 @@ interface Props {
 
 export function SessionScreen({
   activeDay, day, step, steps, currentStep, totalSteps,
-  isNewSection, currentReps, progLevel, showProg, viewMode, sessionData,
-  getProgLevel, getStepReps, onSetReps, onShowProg, onSetProgLevel, onStepDone, onBack,
+  isNewSection, currentReps, viewMode, sessionData,
+  getProgLevel, getStepReps, onSetReps, onSetProgLevel, onStepDone, onBack,
   onSetViewMode,
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
@@ -74,23 +70,12 @@ export function SessionScreen({
           currentStep={currentStep}
           isNewSection={isNewSection}
           currentReps={currentReps}
-          progLevel={progLevel}
           sessionData={sessionData}
           getStepReps={getStepReps}
           onSetReps={onSetReps}
-          onShowProg={() => onShowProg(true)}
           onDone={onStepDone}
           onBack={onBack}
         />
-
-        {showProg && step && (
-          <ProgressionDrawer
-            exercise={step.exercise}
-            currentLevel={progLevel}
-            onSelectLevel={(lvl) => onSetProgLevel(step.exercise.id, lvl)}
-            onClose={() => onShowProg(false)}
-          />
-        )}
 
         {!isMap && (
           <div className="swipe-up-hint" onClick={() => onSetViewMode('map')}>
@@ -111,6 +96,7 @@ export function SessionScreen({
           currentStep={currentStep}
           sessionData={sessionData}
           getProgLevel={getProgLevel}
+          onSetProgLevel={onSetProgLevel}
           onClose={() => onSetViewMode('step')}
         />
       </div>

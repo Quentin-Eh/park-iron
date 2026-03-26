@@ -478,6 +478,13 @@
   gap: var(--space-2);
   padding: var(--space-1) 0;
   font-size: var(--text-sm);
+  width: 100%;
+  background: none;
+  border: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.session-map-prog-item:active {
+  opacity: 0.7;
 }
 .session-map-prog-num {
   width: 22px;
@@ -504,57 +511,142 @@
   background: var(--day-color, var(--bg-surface));
 }
 
-/* Quick-select rep pills */
-.quick-select-row {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+/* Rep wheel — iPod-style circular selector */
+.rep-wheel {
+  position: relative;
+  margin: 0 auto var(--space-3);
+  touch-action: none;
 }
-.quick-select-pill {
-  min-width: 48px;
-  height: 48px;
-  border-radius: var(--radius-xl);
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--text-primary);
+.rep-wheel-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--day-color-rgb), 0.12);
+  background: radial-gradient(circle at center, transparent 45%, rgba(var(--day-color-rgb), 0.03) 100%);
+  pointer-events: none;
+}
+.rep-wheel-num {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
   font-family: var(--font-mono);
-  font-size: var(--text-lg);
+  font-size: var(--text-base);
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background .15s, border-color .15s, transform .1s;
+  transform: translate(-50%, -50%);
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 1;
+  padding: 0;
+}
+.rep-wheel-num:active {
+  transform: translate(-50%, -50%) scale(0.88);
+}
+.rep-wheel-num.suggested {
+  color: var(--day-color);
+  background: rgba(var(--day-color-rgb), 0.08);
+}
+.rep-wheel-num.selected {
+  background: var(--day-color);
+  color: var(--color-bg);
+  font-weight: 900;
+  box-shadow: 0 0 20px rgba(var(--day-color-rgb), 0.4);
+}
+.rep-wheel-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-default);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: border-color 0.2s, background 0.2s;
+  padding: 0;
   -webkit-tap-highlight-color: transparent;
 }
-.quick-select-pill:active {
-  transform: scale(0.95);
+.rep-wheel-center.has-value {
+  border-color: rgba(var(--day-color-rgb), 0.3);
 }
-.quick-select-pill.suggested {
-  border-color: var(--day-color);
+.rep-wheel-center:active {
   background: var(--day-bg);
-}
-.quick-select-pill.selected {
   border-color: var(--day-color);
-  background: var(--day-bg-subtle);
-  color: var(--day-color);
 }
-.quick-select-fallback {
+.rep-wheel-value {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--text-primary);
+  line-height: 1;
+}
+.rep-wheel-hint {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--day-color);
+  margin-top: 2px;
+}
+.rep-wheel-adjust {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-8);
+  opacity: 0.35;
   margin-bottom: var(--space-4);
-  opacity: 1;
+  transition: opacity 0.15s;
 }
-.quick-select-fallback .count {
+
+/* Side toggle for unilateral exercises */
+.side-toggle {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  width: 100%;
+  max-width: 280px;
+}
+.side-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.side-toggle-btn.active {
+  border-color: var(--day-color);
+  color: var(--day-color);
+  background: var(--day-bg);
+}
+.side-toggle-badge {
   font-family: var(--font-mono);
-  font-size: var(--text-md);
-  font-weight: 700;
-  min-width: 32px;
-  text-align: center;
+  font-size: var(--text-xs);
+  background: rgba(var(--day-color-rgb), 0.2);
+  color: var(--day-color);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
 }
 
 /* Coaching screen */

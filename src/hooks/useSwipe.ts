@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react';
 
 type Direction = 'left' | 'right' | 'up' | 'down';
 
-const MIN_DISTANCE = 50;
+const MIN_DISTANCE = 120;
 
 export function useSwipe(onSwipe: (dir: Direction) => void) {
   const startX = useRef(0);

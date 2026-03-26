@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import type { Step } from '../types/step.ts';
 import type { SessionData } from '../types/session.ts';
 import { HoldTimer } from './HoldTimer.tsx';
+import { RepWheel } from './RepWheel.tsx';
 import { tapFeedback } from '../lib/haptics.ts';
 
 interface Props {
@@ -8,11 +10,9 @@ interface Props {
   currentStep: number;
   isNewSection: boolean;
   currentReps: number;
-  progLevel: number;
   sessionData: SessionData;
   getStepReps: (step: Step | null, side?: 'L' | 'R') => number;
   onSetReps: (step: Step | null, val: number, side?: 'L' | 'R') => void;
-  onShowProg: () => void;
   onDone: () => void;
   onBack: () => void;
 }
@@ -61,52 +61,14 @@ function getSuggestedReps(step: Step, sessionData: SessionData, side?: 'L' | 'R'
   return null;
 }
 
-function SidePills({ side, reps, suggested, pills, step, onTap, onSetReps }: {
-  side: 'L' | 'R';
-  reps: number;
-  suggested: number | null;
-  pills: number[];
-  step: Step;
-  onTap: (val: number, side: 'L' | 'R') => void;
-  onSetReps: (step: Step | null, val: number, side?: 'L' | 'R') => void;
-}) {
-  return (
-    <div style={{ marginBottom: side === 'L' ? 'var(--space-5)' : undefined, width: '100%' }}>
-      <p style={{
-        textAlign: 'center', fontSize: 'var(--text-lg)', fontWeight: 800,
-        color: 'var(--day-color)', letterSpacing: '0.1em', marginBottom: 'var(--space-2)',
-      }}>
-        {side === 'L' ? 'LEFT' : 'RIGHT'}
-      </p>
-      <div className="quick-select-row">
-        {pills.map((val) => (
-          <button
-            key={val}
-            className={`quick-select-pill${val === suggested ? ' suggested' : ''}${val === reps ? ' selected' : ''}`}
-            onClick={() => onTap(val, side)}
-          >
-            {val}
-          </button>
-        ))}
-      </div>
-      <div className="quick-select-fallback">
-        <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, Math.max(0, reps - 1), side); }}>−</button>
-        <span className="count">{reps}</span>
-        <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, reps + 1, side); }}>+</button>
-      </div>
-    </div>
-  );
-}
-
 export function ExercisePhase({
-  step, currentStep, isNewSection, currentReps, progLevel, sessionData,
-  getStepReps, onSetReps, onShowProg, onDone, onBack,
+  step, currentStep, isNewSection, currentReps, sessionData,
+  getStepReps, onSetReps, onDone, onBack,
 }: Props) {
   const isHold = !!step.exercise.isHold;
   const isUnilateral = step.isUnilateral;
   const pills = isHold ? [] : parseTargetRange(step.exercise.target);
 
-  // For bilateral: check if both sides have been logged this set
   const leftReps = isUnilateral ? getStepReps(step, 'L') : 0;
   const rightReps = isUnilateral ? getStepReps(step, 'R') : 0;
   const bilateralDone = isUnilateral && leftReps > 0 && rightReps > 0;
@@ -115,16 +77,11 @@ export function ExercisePhase({
   const suggestedR = isUnilateral ? getSuggestedReps(step, sessionData, 'R') : null;
   const suggested = !isUnilateral && !isHold ? getSuggestedReps(step, sessionData) : null;
 
-  const handlePillTap = (val: number) => {
-    tapFeedback();
-    onSetReps(step, val);
-    onDone();
-  };
+  const [activeSide, setActiveSide] = useState<'L' | 'R'>('L');
+  useEffect(() => { setActiveSide('L'); }, [currentStep]);
 
-  const handleBilateralPillTap = (val: number, side: 'L' | 'R') => {
-    tapFeedback();
-    onSetReps(step, val, side);
-  };
+  const activeReps = activeSide === 'L' ? leftReps : rightReps;
+  const activeSuggested = activeSide === 'L' ? suggestedL : suggestedR;
 
   return (
     <div key={currentStep} className="fade-in" style={{
@@ -133,7 +90,7 @@ export function ExercisePhase({
     }}>
       <button className="btn-icon" onClick={onBack}
         style={{ position: 'fixed', top: 'var(--space-2)', left: 'var(--space-4)', zIndex: 'var(--z-controls)' }}>
-        ←
+        &#x2190;
       </button>
 
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
@@ -153,32 +110,9 @@ export function ExercisePhase({
         </span>
       </div>
 
-      <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, textAlign: 'center', marginBottom: '6px', lineHeight: 1.2 }}>
+      <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', lineHeight: 1.2 }}>
         {step.exercise.name}
       </h2>
-
-      <p style={{ textAlign: 'center', color: 'var(--day-color)', fontSize: 'var(--text-base)', fontWeight: 500, marginBottom: 'var(--space-1)' }}>
-        {step.exercise.progression[progLevel] || step.exercise.progression[0]}
-      </p>
-
-      <p className="text-body" style={{ textAlign: 'center', marginBottom: 'var(--space-5)' }}>
-        {step.exercise.detail}
-      </p>
-
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-8)' }}>
-        <span style={{
-          background: 'var(--day-bg)', color: 'var(--day-color)', fontSize: 'var(--text-base)', fontWeight: 600,
-          padding: '6px var(--space-4)', borderRadius: 'var(--radius-md)',
-        }}>
-          Target: {step.exercise.target}{isHold ? '' : ' reps'}
-        </span>
-        <button onClick={onShowProg} style={{
-          background: 'var(--bg-subtle)', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700,
-          padding: '6px 14px', borderRadius: 'var(--radius-md)', border: 'none', cursor: 'pointer',
-        }}>
-          ↑ Prog
-        </button>
-      </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
         {isHold ? (
@@ -189,35 +123,59 @@ export function ExercisePhase({
           />
         ) : isUnilateral ? (
           <>
-            <SidePills side="L" reps={leftReps} suggested={suggestedL} pills={pills} step={step} onTap={handleBilateralPillTap} onSetReps={onSetReps} />
-            <SidePills side="R" reps={rightReps} suggested={suggestedR} pills={pills} step={step} onTap={handleBilateralPillTap} onSetReps={onSetReps} />
+            <div className="side-toggle">
+              <button
+                className={`side-toggle-btn${activeSide === 'L' ? ' active' : ''}`}
+                onClick={() => setActiveSide('L')}
+              >
+                LEFT
+                {leftReps > 0 && <span className="side-toggle-badge">{leftReps}</span>}
+              </button>
+              <button
+                className={`side-toggle-btn${activeSide === 'R' ? ' active' : ''}`}
+                onClick={() => setActiveSide('R')}
+              >
+                RIGHT
+                {rightReps > 0 && <span className="side-toggle-badge">{rightReps}</span>}
+              </button>
+            </div>
+            <RepWheel
+              values={pills}
+              value={activeReps}
+              suggested={activeSuggested}
+              onChange={(v) => {
+                onSetReps(step, v, activeSide);
+                if (activeSide === 'L' && rightReps === 0) {
+                  setTimeout(() => setActiveSide('R'), 300);
+                }
+              }}
+              onConfirm={() => {
+                if (activeSide === 'L') setActiveSide('R');
+              }}
+            />
+            <div className="rep-wheel-adjust">
+              <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, Math.max(0, activeReps - 1), activeSide); }}>&#x2212;</button>
+              <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, activeReps + 1, activeSide); }}>+</button>
+            </div>
           </>
         ) : (
           <>
-            {/* Quick-select pills */}
-            <div className="quick-select-row">
-              {pills.map((val) => (
-                <button
-                  key={val}
-                  className={`quick-select-pill${val === suggested ? ' suggested' : ''}`}
-                  onClick={() => handlePillTap(val)}
-                >
-                  {val}
-                </button>
-              ))}
-            </div>
-
-            {/* +/- fallback for edge cases */}
-            <div className="quick-select-fallback">
-              <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, Math.max(0, currentReps - 1)); }}>−</button>
-              <span className="count">{currentReps}</span>
+            <RepWheel
+              values={pills}
+              value={currentReps}
+              suggested={suggested}
+              onChange={(v) => onSetReps(step, v)}
+              onConfirm={onDone}
+              autoAdvanceOnTap
+            />
+            <div className="rep-wheel-adjust">
+              <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, Math.max(0, currentReps - 1)); }}>&#x2212;</button>
               <button className="btn-counter-sm" onClick={() => { tapFeedback(); onSetReps(step, currentReps + 1); }}>+</button>
             </div>
           </>
         )}
       </div>
 
-      {/* DONE button for hold exercises and bilateral exercises */}
       {(isHold || isUnilateral) && (
         <button
           onClick={onDone}
@@ -231,7 +189,7 @@ export function ExercisePhase({
             opacity: (isUnilateral && !bilateralDone) ? 0.5 : 1,
           }}
         >
-          DONE →
+          DONE &#x2192;
         </button>
       )}
     </div>
