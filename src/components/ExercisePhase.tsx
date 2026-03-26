@@ -85,7 +85,7 @@ export function ExercisePhase({
 
   return (
     <div key={currentStep} className="fade-in" style={{
-      padding: '50px var(--space-5) var(--space-5)', minHeight: '100dvh',
+      padding: '80px var(--space-5) var(--space-5)', minHeight: '100dvh',
       display: 'flex', flexDirection: 'column',
     }}>
       <button className="btn-icon" onClick={onBack}

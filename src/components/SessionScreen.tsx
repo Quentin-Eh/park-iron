@@ -36,6 +36,9 @@ export function SessionScreen({
 
   const handleSwipe = useCallback((dir: 'left' | 'right' | 'up' | 'down') => {
     if (dir === 'up' && viewMode === 'step') {
+      // Only switch to map when scrolled to the bottom of the page
+      const atBottom = (window.innerHeight + window.scrollY) >= document.body.scrollHeight - 30;
+      if (!atBottom) return;
       onSetViewMode('map');
     } else if (dir === 'down' && viewMode === 'map') {
       const el = mapRef.current;
