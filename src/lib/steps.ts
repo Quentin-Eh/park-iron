@@ -16,6 +16,7 @@ export function generateSteps(day: Day): Step[] {
           totalSets: section.rounds,
           sectionLabel: section.label,
           isUnilateral: !!exercise.isUnilateral,
+          isRestPause: !!section.isRestPause,
         });
       }
     }

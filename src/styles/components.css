@@ -511,6 +511,82 @@
   background: var(--day-color, var(--bg-surface));
 }
 
+/* Rest-pause gauge — three-segment progress indicator */
+.rp-gauge {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: var(--space-2) auto var(--space-2);
+  width: 120px;
+}
+.rp-gauge-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-subtle);
+  transition: background .3s, box-shadow .3s;
+}
+.rp-gauge-seg.done {
+  background: var(--day-color);
+}
+.rp-gauge-seg.current {
+  background: var(--day-color);
+  box-shadow: 0 0 8px rgba(var(--day-color-rgb), 0.5);
+  animation: rpPulse 1.5s ease infinite;
+}
+@keyframes rpPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Rest-pause label */
+.rp-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: var(--day-color);
+  margin-top: var(--space-1);
+  text-transform: uppercase;
+}
+
+/* Rest-pause running total */
+.rp-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: var(--space-2) 0 var(--space-4);
+  font-family: var(--font-mono);
+}
+.rp-total-num {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--day-color);
+}
+.rp-total-plus {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  font-weight: 500;
+}
+.rp-total-pending {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--text-muted);
+  animation: rpPulse 1.5s ease infinite;
+}
+.rp-total-side {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.rp-total-divider {
+  font-size: var(--text-sm);
+  color: var(--text-faint);
+  margin: 0 2px;
+}
+
 /* Rep wheel — iPod-style circular selector */
 .rep-wheel {
   position: relative;

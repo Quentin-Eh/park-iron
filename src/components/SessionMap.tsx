@@ -57,7 +57,7 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
             <div className="session-map-section-header">
               <span className="session-map-section-label">{section.label}</span>
               <span className="session-map-section-meta">
-                {section.rounds} sets
+                {section.isRestPause ? 'rest-pause' : `${section.rounds} sets`}
               </span>
             </div>
 
@@ -95,6 +95,11 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
                                 </div>
                               ))}
                             </div>
+                            {section.isRestPause && setsL!.some(s => s.status === 'done' && s.reps > 0) && (
+                              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 700 }}>
+                                ={setsL!.reduce((sum, s) => sum + (s.status === 'done' ? s.reps : 0), 0)}
+                              </span>
+                            )}
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                             <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 700, width: 12 }}>R</span>
@@ -105,15 +110,27 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
                                 </div>
                               ))}
                             </div>
+                            {section.isRestPause && setsR!.some(s => s.status === 'done' && s.reps > 0) && (
+                              <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 700 }}>
+                                ={setsR!.reduce((sum, s) => sum + (s.status === 'done' ? s.reps : 0), 0)}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ) : (
-                        <div className="session-map-sets">
-                          {sets!.map((s, i) => (
-                            <div key={i} className={`session-map-set-dot ${s.status}`}>
-                              {s.status === 'done' && s.reps > 0 ? s.reps : ''}
-                            </div>
-                          ))}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <div className="session-map-sets">
+                            {sets!.map((s, i) => (
+                              <div key={i} className={`session-map-set-dot ${s.status}`}>
+                                {s.status === 'done' && s.reps > 0 ? s.reps : ''}
+                              </div>
+                            ))}
+                          </div>
+                          {section.isRestPause && sets!.some(s => s.status === 'done' && s.reps > 0) && (
+                            <span style={{ fontSize: 11, color: 'var(--text-secondary)', fontWeight: 700 }}>
+                              ={sets!.reduce((sum, s) => sum + (s.status === 'done' ? s.reps : 0), 0)}
+                            </span>
+                          )}
                         </div>
                       )}
                       <span className={`session-map-chevron ${isOpen ? 'open' : ''}`}>

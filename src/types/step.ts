@@ -8,4 +8,5 @@ export interface Step {
   totalSets: number;
   sectionLabel: string;
   isUnilateral: boolean;
+  isRestPause: boolean;
 }

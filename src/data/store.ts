@@ -98,6 +98,13 @@ export const DataStore = {
       this.saveProgram(DEFAULT_PROGRAM);
       this.setVersion(3);
     }
+
+    // v3 → v4: rest-pause program, new exercises (ring push-ups, bar dips, wall HSPU, ring leg curls)
+    if (currentVersion < 4) {
+      this.clearDraft();
+      this.saveProgram(DEFAULT_PROGRAM);
+      this.setVersion(4);
+    }
   },
 };
 

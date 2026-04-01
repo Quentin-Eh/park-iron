@@ -12,6 +12,7 @@ export interface Exercise {
 export interface Section {
   label: string;
   rounds: number;
+  isRestPause?: boolean;
   exercises: Exercise[];
 }
 

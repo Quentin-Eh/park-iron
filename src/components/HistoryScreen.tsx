@@ -13,6 +13,20 @@ interface Props {
   onBack: () => void;
 }
 
+function formatReps(program: Program, dayKey: string, exId: string, reps: number[]): string {
+  const baseId = exId.replace(/_[LR]$/, '');
+  const day = program.days[dayKey];
+  if (day) {
+    for (const sec of day.sections) {
+      if (sec.isRestPause && sec.exercises.some(e => e.id === baseId)) {
+        const total = reps.reduce((a, b) => a + b, 0);
+        return `${reps.join('+')}=${total}`;
+      }
+    }
+  }
+  return reps.join('-');
+}
+
 export function HistoryScreen({ program, history, setHistory, setProgressions, showToast, onBack }: Props) {
   const importRef = useRef<HTMLInputElement>(null);
 
@@ -117,7 +131,7 @@ export function HistoryScreen({ program, history, setHistory, setProgressions, s
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {Object.entries(entry.exercises).map(([exId, reps]) => (
                 <span key={exId} className="htag">
-                  {findExerciseName(program, entry.day, exId)}: {reps.join('-')}
+                  {findExerciseName(program, entry.day, exId)}: {formatReps(program, entry.day, exId, reps)}
                 </span>
               ))}
             </div>

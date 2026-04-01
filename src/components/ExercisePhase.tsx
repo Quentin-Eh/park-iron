@@ -61,12 +61,24 @@ function getSuggestedReps(step: Step, sessionData: SessionData, side?: 'L' | 'R'
   return null;
 }
 
+/** Get accumulated reps from previous mini-sets for rest-pause exercises */
+function getPreviousMiniSetReps(step: Step, sessionData: SessionData, side?: 'L' | 'R'): number[] {
+  const key = step.exercise.id + (side ? `_${side}` : '');
+  const reps = sessionData[key] || [];
+  const prev: number[] = [];
+  for (let i = 0; i < step.setIndex; i++) {
+    if (reps[i] > 0) prev.push(reps[i]);
+  }
+  return prev;
+}
+
 export function ExercisePhase({
   step, currentStep, isNewSection, currentReps, sessionData,
   getStepReps, onSetReps, onDone, onBack,
 }: Props) {
   const isHold = !!step.exercise.isHold;
   const isUnilateral = step.isUnilateral;
+  const isRestPause = step.isRestPause;
   const pills = isHold ? [] : parseTargetRange(step.exercise.target);
 
   const leftReps = isUnilateral ? getStepReps(step, 'L') : 0;
@@ -83,6 +95,16 @@ export function ExercisePhase({
   const activeReps = activeSide === 'L' ? leftReps : rightReps;
   const activeSuggested = activeSide === 'L' ? suggestedL : suggestedR;
 
+  // Rest-pause: accumulated reps from completed mini-sets
+  const prevReps = isRestPause ? getPreviousMiniSetReps(step, sessionData) : [];
+  const prevRepsL = isRestPause && isUnilateral ? getPreviousMiniSetReps(step, sessionData, 'L') : [];
+  const prevRepsR = isRestPause && isUnilateral ? getPreviousMiniSetReps(step, sessionData, 'R') : [];
+  const runningTotalL = prevRepsL.reduce((a, b) => a + b, 0);
+  const runningTotalR = prevRepsR.reduce((a, b) => a + b, 0);
+
+  // Mini-set label text
+  const miniSetLabels = ['MAX REPS', 'MORE REPS', 'FINAL PUSH'];
+
   return (
     <div key={currentStep} className="fade-in" style={{
       padding: '80px var(--space-5) var(--space-5)', minHeight: '100dvh',
@@ -93,7 +115,7 @@ export function ExercisePhase({
         &#x2190;
       </button>
 
-      <div style={{ textAlign: 'center', marginBottom: 'var(--space-6)' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
           <span className="text-meta" style={{ color: 'var(--day-color)' }}>
             {step.sectionLabel}
@@ -105,14 +127,62 @@ export function ExercisePhase({
             }}>NEW</span>
           )}
         </div>
-        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-          Set {step.setNumber} of {step.totalSets}
-        </span>
+
+        {isRestPause ? (
+          <>
+            {/* Mini-set gauge — three segments */}
+            <div className="rp-gauge">
+              {Array.from({ length: step.totalSets }, (_, i) => (
+                <div
+                  key={i}
+                  className={`rp-gauge-seg${
+                    i < step.setIndex ? ' done' : i === step.setIndex ? ' current' : ''
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="rp-label">
+              {miniSetLabels[step.setIndex] || `Mini-set ${step.setNumber}`}
+            </span>
+          </>
+        ) : (
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Set {step.setNumber} of {step.totalSets}
+          </span>
+        )}
       </div>
 
-      <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-8)', lineHeight: 1.2 }}>
+      <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-2)', lineHeight: 1.2 }}>
         {step.exercise.name}
       </h2>
+
+      {/* Running total — shows accumulated reps from previous mini-sets */}
+      {isRestPause && step.setIndex > 0 && !isUnilateral && (
+        <div className="rp-total">
+          {prevReps.map((r, i) => (
+            <span key={i}>
+              {i > 0 && <span className="rp-total-plus">+</span>}
+              <span className="rp-total-num">{r}</span>
+            </span>
+          ))}
+          <span className="rp-total-plus">+</span>
+          <span className="rp-total-pending">?</span>
+        </div>
+      )}
+      {isRestPause && step.setIndex > 0 && isUnilateral && (
+        <div className="rp-total">
+          <span className="rp-total-side">L</span>
+          <span className="rp-total-num">{runningTotalL}</span>
+          <span className="rp-total-divider">/</span>
+          <span className="rp-total-side">R</span>
+          <span className="rp-total-num">{runningTotalR}</span>
+        </div>
+      )}
+
+      {/* Spacer when no total shown */}
+      {(!isRestPause || step.setIndex === 0) && (
+        <div style={{ marginBottom: 'var(--space-6)' }} />
+      )}
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 200 }}>
         {isHold ? (
