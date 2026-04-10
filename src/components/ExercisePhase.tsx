@@ -17,9 +17,20 @@ interface Props {
   onBack: () => void;
 }
 
-/** Parse exercise target string into an array of selectable rep values */
-function parseTargetRange(target: string): number[] {
-  // Range: "6-12", "8-15", "4-8"
+/** Parse exercise target into an array of selectable rep values. Prefers
+ *  structured repMin/repMax fields; falls back to parsing the target string. */
+function parseTargetRange(step: Step): number[] {
+  const { repMin, repMax } = step.exercise;
+  if (repMin !== undefined && repMax !== undefined) {
+    // Include 2 reps above the cap so the user can log exceeding the target
+    // (which triggers the progression auto-advance).
+    const vals: number[] = [];
+    const lo = Math.max(1, repMin - 1);
+    for (let i = lo; i <= repMax + 2; i++) vals.push(i);
+    return vals;
+  }
+
+  const target = step.exercise.target;
   const rangeMatch = target.match(/^(\d+)\s*-\s*(\d+)/);
   if (rangeMatch) {
     const lo = parseInt(rangeMatch[1]);
@@ -79,7 +90,11 @@ export function ExercisePhase({
   const isHold = !!step.exercise.isHold;
   const isUnilateral = step.isUnilateral;
   const isRestPause = step.isRestPause;
-  const pills = isHold ? [] : parseTargetRange(step.exercise.target);
+  const isWarmup = !!step.isWarmup;
+  const isSupersetSecond = step.isSuperset && step.supersetPosition === 'second';
+  const tempo = step.exercise.tempo && step.exercise.tempo !== 'hold' ? step.exercise.tempo : null;
+  const beyondFailureHint = !isWarmup ? step.exercise.beyondFailureHint : undefined;
+  const pills = isHold || isWarmup ? [] : parseTargetRange(step);
 
   const leftReps = isUnilateral ? getStepReps(step, 'L') : 0;
   const rightReps = isUnilateral ? getStepReps(step, 'R') : 0;
@@ -105,6 +120,46 @@ export function ExercisePhase({
   // Mini-set label text
   const miniSetLabels = ['MAX REPS', 'MORE REPS', 'FINAL PUSH'];
 
+  // Warm-up layout: a simple "tap to acknowledge" screen with no rep logging.
+  if (isWarmup) {
+    return (
+      <div key={currentStep} className="fade-in" style={{
+        padding: '80px var(--space-5) var(--space-5)', minHeight: '100dvh',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+      }}>
+        <button className="btn-icon" onClick={onBack}
+          style={{ position: 'fixed', top: 'var(--space-2)', left: 'var(--space-4)', zIndex: 'var(--z-controls)' }}>
+          &#x2190;
+        </button>
+        <span className="text-meta" style={{ color: 'var(--day-color)', marginBottom: 'var(--space-2)' }}>
+          {step.sectionLabel}
+        </span>
+        <div style={{
+          fontSize: 'var(--text-sm)', fontWeight: 800, letterSpacing: 2,
+          color: 'var(--text-secondary)', marginBottom: 'var(--space-3)',
+        }}>
+          WARM-UP · SET {step.setNumber} OF {step.totalSets}
+        </div>
+        <h2 style={{ fontSize: 'var(--text-3xl)', fontWeight: 900, textAlign: 'center', marginBottom: 'var(--space-3)', lineHeight: 1.2 }}>
+          {step.exercise.name}
+        </h2>
+        <p style={{
+          textAlign: 'center', color: 'var(--text-secondary)',
+          fontSize: 'var(--text-md)', maxWidth: 320, marginBottom: 'var(--space-6)',
+        }}>
+          One easy set at ~50% effort.<br/>Grease the groove — don't approach failure.
+        </p>
+        <div style={{ flex: 1 }} />
+        <button onClick={onDone} className="btn-primary" style={{
+          background: 'linear-gradient(135deg,var(--day-color),rgba(var(--day-color-rgb),0.67))',
+          marginBottom: 'var(--space-5)', width: '100%',
+        }}>
+          WARM-UP DONE &#x2192;
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div key={currentStep} className="fade-in" style={{
       padding: '80px var(--space-5) var(--space-5)', minHeight: '100dvh',
@@ -114,6 +169,16 @@ export function ExercisePhase({
         style={{ position: 'fixed', top: 'var(--space-2)', left: 'var(--space-4)', zIndex: 'var(--z-controls)' }}>
         &#x2190;
       </button>
+
+      {isSupersetSecond && (
+        <div style={{
+          textAlign: 'center', marginBottom: 'var(--space-3)',
+          fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5,
+          color: 'var(--day-color)',
+        }}>
+          &#x26A1; ZERO REST — GO IMMEDIATELY
+        </div>
+      )}
 
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-1)' }}>
@@ -125,6 +190,13 @@ export function ExercisePhase({
               fontSize: 'var(--text-xs)', background: 'var(--day-bg)', color: 'var(--day-color)',
               padding: '2px var(--space-2)', borderRadius: 'var(--radius-sm)', fontWeight: 700,
             }}>NEW</span>
+          )}
+          {tempo && (
+            <span style={{
+              fontSize: 'var(--text-xs)', background: 'var(--bg-subtle)', color: 'var(--text-secondary)',
+              padding: '2px var(--space-2)', borderRadius: 'var(--radius-sm)', fontWeight: 700,
+              fontFamily: 'var(--font-mono)',
+            }}>TEMPO {tempo}</span>
           )}
         </div>
 
@@ -245,6 +317,27 @@ export function ExercisePhase({
           </>
         )}
       </div>
+
+      {beyondFailureHint && (
+        <div style={{
+          padding: 'var(--space-3) var(--space-4)',
+          marginBottom: 'var(--space-4)',
+          background: 'var(--day-bg)',
+          border: '1px solid rgba(var(--day-color-rgb),0.25)',
+          borderRadius: 'var(--radius-lg)',
+          fontSize: 'var(--text-sm)',
+          lineHeight: 1.4,
+          color: 'var(--text-primary)',
+        }}>
+          <div style={{
+            fontSize: 'var(--text-xs)', fontWeight: 800, letterSpacing: 1.5,
+            color: 'var(--day-color)', marginBottom: 4,
+          }}>
+            BEYOND FAILURE
+          </div>
+          {beyondFailureHint}
+        </div>
+      )}
 
       {(isHold || isUnilateral) && (
         <button

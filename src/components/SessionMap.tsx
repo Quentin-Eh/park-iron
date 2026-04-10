@@ -25,11 +25,13 @@ export function SessionMap({ day, steps, currentStep, sessionData, getProgLevel,
     return () => clearTimeout(t);
   }, []);
 
-  // Build set status for each exercise (or each side of a unilateral exercise)
+  // Build set status for each exercise (or each side of a unilateral exercise).
+  // Warm-up steps are part of the flow but don't count as tracked sets — they
+  // are excluded from the map so "sets" reflects working sets only.
   function getSetStatus(exId: string, side?: 'L' | 'R') {
     const dataKey = exId + (side ? `_${side}` : '');
     const reps = sessionData[dataKey] || [];
-    const exerciseSteps = steps.filter(s => s.exercise.id === exId);
+    const exerciseSteps = steps.filter(s => s.exercise.id === exId && !s.isWarmup);
     return exerciseSteps.map((s) => {
       const stepIdx = steps.indexOf(s);
       const logged = reps[s.setIndex] ?? 0;

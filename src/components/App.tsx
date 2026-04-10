@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Program } from '../types/program.ts';
 import { DataStore } from '../data/store.ts';
 import { DEFAULT_PROGRAM } from '../data/default-program.ts';
+import { PROGRAMS } from '../data/programs.ts';
 import { useToast } from '../hooks/useToast.ts';
 import { useAuth } from '../hooks/useAuth.ts';
 import { useSession } from '../hooks/useSession.ts';
@@ -20,6 +21,17 @@ export function App() {
   const { toast, showToast } = useToast();
   const auth = useAuth();
   const session = useSession(program, showToast, auth.user?.id ?? null);
+
+  const handleSwitchProgram = useCallback((id: string) => {
+    // Clear any in-flight draft before switching — the draft references a
+    // dayKey + step index from the previous program and won't map cleanly.
+    // Also dismiss any pending resume prompt held in session state.
+    session.discardDraft();
+    DataStore.setActiveProgramId(id);
+    const next = DataStore.getProgram();
+    setProgram(next);
+    showToast(`Switched to ${next.name}`);
+  }, [showToast, session]);
 
   // Show auth screen if Supabase is configured but user hasn't logged in or skipped
   if (auth.isConfigured && auth.mode === 'loading' && !auth.loading) {
@@ -66,9 +78,11 @@ export function App() {
       {session.screen === 'home' && (
         <HomeScreen
           program={program}
+          programs={PROGRAMS}
           history={session.history}
           onStartSession={session.startSession}
           onShowHistory={() => session.setScreen('history')}
+          onSwitchProgram={handleSwitchProgram}
           user={auth.user}
           onSignOut={auth.signOut}
           isConfigured={auth.isConfigured}

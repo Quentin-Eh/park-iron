@@ -1,6 +1,7 @@
 import type { Session, SessionDraft, SessionData } from '../types/session.ts';
 import type { Program } from '../types/program.ts';
 import { DEFAULT_PROGRAM } from './default-program.ts';
+import { PROGRAMS, getProgramById, DEFAULT_ACTIVE_PROGRAM_ID } from './programs.ts';
 
 function get<T>(key: string): T | null {
   try { return JSON.parse(localStorage.getItem(`pi-${key}`)!) as T; }
@@ -28,9 +29,38 @@ export const DataStore = {
   getProgressions(): Record<string, number> { return get<Record<string, number>>('progressions') || {}; },
   saveProgressions(p: Record<string, number>) { set('progressions', p); },
 
-  getProgram(): Program { return get<Program>('program') || DEFAULT_PROGRAM; },
+  /**
+   * Returns the currently active program. Resolution order:
+   *   1. If `pi-program` exists AND its id matches the active id, return it
+   *      (preserves customizations made to the active program).
+   *   2. Otherwise return the library copy for the active id.
+   *   3. Fall back to DEFAULT_PROGRAM if something is wrong.
+   */
+  getProgram(): Program {
+    const activeId = this.getActiveProgramId();
+    const stored = get<Program>('program');
+    if (stored && stored.id === activeId) return stored;
+    return getProgramById(activeId) || DEFAULT_PROGRAM;
+  },
   saveProgram(p: Program) { set('program', p); },
   hasProgram(): boolean { return localStorage.getItem('pi-program') !== null; },
+
+  getActiveProgramId(): string {
+    return get<string>('active-program') || DEFAULT_ACTIVE_PROGRAM_ID;
+  },
+  /**
+   * Switch to a different program from the library. Clears any customizations
+   * from the previously active program (`pi-program`) so the new library copy
+   * is used fresh.
+   */
+  setActiveProgramId(id: string) {
+    const program = getProgramById(id);
+    if (!program) return;
+    set('active-program', id);
+    // Replace any cached/customized program object with the library version
+    set('program', program);
+  },
+  listPrograms(): Program[] { return PROGRAMS; },
 
   getVersion(): number { return get<number>('version') || 0; },
   setVersion(v: number) { set('version', v); },
@@ -104,6 +134,24 @@ export const DataStore = {
       this.clearDraft();
       this.saveProgram(DEFAULT_PROGRAM);
       this.setVersion(4);
+    }
+
+    // v4 → v5: multi-program support. Existing users keep rest-pause as active;
+    // any stored custom program is rebased onto the updated schema.
+    if (currentVersion < 5) {
+      if (!get<string>('active-program')) {
+        set('active-program', DEFAULT_ACTIVE_PROGRAM_ID);
+      }
+      // Re-save the default program so tag fields (id, scheduleMode) are present
+      const stored = get<Program>('program');
+      if (!stored || stored.id !== DEFAULT_PROGRAM.id) {
+        this.saveProgram(DEFAULT_PROGRAM);
+      } else if (!stored.scheduleMode) {
+        // Stored program predates scheduleMode — merge the required field
+        this.saveProgram({ ...DEFAULT_PROGRAM, ...stored, scheduleMode: 'weekly' });
+      }
+      this.clearDraft();
+      this.setVersion(5);
     }
   },
 };

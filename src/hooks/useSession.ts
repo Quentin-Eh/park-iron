@@ -131,13 +131,44 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
   }, [progressions, userId]);
 
   const finishSession = useCallback(() => {
+    // Auto-advance progression: for each exercise with a structured repMax,
+    // if the peak single-set reps exceeded the cap, bump the progression
+    // level (if a higher level exists). Shows a single toast summarising.
+    const day = program.days[activeDay!];
+    const advanced: string[] = [];
+    let nextProgressions = { ...progressions };
+    if (day) {
+      day.sections.forEach(section => {
+        section.exercises.forEach(ex => {
+          if (ex.repMax === undefined) return;
+          const ladder = ex.progression || [];
+          const current = nextProgressions[ex.id] ?? 0;
+          if (current >= ladder.length - 1) return; // already at top
+          const reps = sessionData[ex.id] || [];
+          const peak = reps.reduce((m, r) => Math.max(m, r || 0), 0);
+          if (peak > ex.repMax) {
+            nextProgressions = { ...nextProgressions, [ex.id]: current + 1 };
+            advanced.push(ex.name);
+          }
+        });
+      });
+    }
+    if (advanced.length > 0) {
+      setProgressions(nextProgressions);
+      if (userId) {
+        SyncedStore.saveProgressions(userId, nextProgressions);
+      } else {
+        DataStore.saveProgressions(nextProgressions);
+      }
+    }
+
     const entry: Session = {
       id: Date.now(),
       day: activeDay!,
       date: sessionStart!,
       endDate: new Date().toISOString(),
       exercises: sessionData,
-      progressions: { ...progressions },
+      progressions: { ...nextProgressions },
     };
     const h = [entry, ...history];
     setHistory(h);
@@ -158,8 +189,13 @@ export function useSession(program: Program, showToast: (msg: string) => void, u
       setScreen('home');
       setActiveDay(null);
     }
-    showToast('Session saved!');
-  }, [activeDay, sessionStart, sessionData, progressions, history, showToast, userId]);
+    if (advanced.length > 0) {
+      const list = advanced.length === 1 ? advanced[0] : `${advanced.length} exercises`;
+      showToast(`🎯 Advanced ${list}`);
+    } else {
+      showToast('Session saved!');
+    }
+  }, [activeDay, sessionStart, sessionData, progressions, history, showToast, userId, program]);
 
   const dismissCoaching = useCallback(() => {
     setScreen('home');

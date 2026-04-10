@@ -2,26 +2,31 @@ import type { User } from '@supabase/supabase-js';
 import type { Program } from '../types/program.ts';
 import type { Session } from '../types/session.ts';
 import { DayCard } from './DayCard.tsx';
+import { computeSchedule } from '../lib/schedule.ts';
 
 interface Props {
   program: Program;
+  programs: Program[];
   history: Session[];
   onStartSession: (dayKey: string) => void;
   onShowHistory: () => void;
+  onSwitchProgram: (id: string) => void;
   user: User | null;
   onSignOut: () => void;
   isConfigured: boolean;
   onCustomize: () => void;
 }
 
-export function HomeScreen({ program, history, onStartSession, onShowHistory, user, onSignOut, isConfigured, onCustomize }: Props) {
-  const schedule = program.schedule || [];
-  const today = new Date().getDay();
-  const todaySchedule = schedule.find(s => s.weekday === today);
+export function HomeScreen({
+  program, programs, history, onStartSession, onShowHistory, onSwitchProgram,
+  user, onSignOut, isConfigured, onCustomize,
+}: Props) {
+  const summary = computeSchedule(program, history);
+  const hasNothingToday = !summary.activeDayKey;
 
   return (
     <div style={{ padding: 'var(--space-5) var(--space-4)' }} className="fade-in">
-      <div style={{ marginBottom: 'var(--space-8)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div style={{ marginBottom: 'var(--space-5)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
           <h1 className="logo-gradient" style={{ fontSize: 'var(--text-4xl)', letterSpacing: -1.5 }}>
             PARK IRON
@@ -41,19 +46,43 @@ export function HomeScreen({ program, history, onStartSession, onShowHistory, us
         )}
       </div>
 
+      {programs.length > 1 && (
+        <div style={{
+          display: 'flex', gap: 'var(--space-2)', marginBottom: 'var(--space-5)',
+          background: 'var(--bg-surface)', padding: 4, borderRadius: 'var(--radius-lg)',
+        }}>
+          {programs.map(p => {
+            const active = p.id === program.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => !active && onSwitchProgram(p.id)}
+                style={{
+                  flex: 1, background: active ? 'var(--bg-subtle)' : 'transparent',
+                  border: 'none', borderRadius: 'var(--radius-md)',
+                  padding: '8px 10px', cursor: active ? 'default' : 'pointer',
+                  color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  fontSize: 'var(--text-sm)', fontWeight: 700, textAlign: 'center',
+                }}
+              >
+                {p.name.replace('Park Iron — ', '')}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginBottom: 'var(--space-7)' }}>
-        {schedule.map(({ dayKey, weekday }) => {
-          const d = program.days[dayKey];
+        {summary.days.map(dayState => {
+          const d = program.days[dayState.dayKey];
           if (!d) return null;
-          const isToday = weekday === today;
-          const last = history.find(h => h.day === dayKey);
+          const last = history.find(h => h.day === dayState.dayKey);
           return (
             <DayCard
-              key={dayKey}
-              dayKey={dayKey}
-              weekday={weekday}
+              key={dayState.dayKey}
+              dayKey={dayState.dayKey}
               day={d}
-              isToday={isToday}
+              state={dayState}
               lastSession={last}
               onStart={onStartSession}
             />
@@ -61,7 +90,7 @@ export function HomeScreen({ program, history, onStartSession, onShowHistory, us
         })}
       </div>
 
-      {!todaySchedule && (
+      {hasNothingToday && (
         <div style={{
           textAlign: 'center', padding: 'var(--space-3) var(--space-4)',
           marginBottom: 'var(--space-4)', background: 'var(--bg-surface)',
@@ -84,15 +113,17 @@ export function HomeScreen({ program, history, onStartSession, onShowHistory, us
         <span style={{ color: 'var(--text-secondary)', fontSize: 'var(--text-xl)' }}>→</span>
       </button>
 
-      <button onClick={onCustomize}
-        style={{
-          background: 'none', border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-xl)', padding: 'var(--space-3) var(--space-4)',
-          color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', fontWeight: 600,
-          cursor: 'pointer', width: '100%', marginTop: 'var(--space-3)',
-        }}>
-        Customize your program
-      </button>
+      {program.scheduleMode === 'weekly' && (
+        <button onClick={onCustomize}
+          style={{
+            background: 'none', border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-xl)', padding: 'var(--space-3) var(--space-4)',
+            color: 'var(--text-secondary)', fontSize: 'var(--text-sm)', fontWeight: 600,
+            cursor: 'pointer', width: '100%', marginTop: 'var(--space-3)',
+          }}>
+          Customize your program
+        </button>
+      )}
     </div>
   );
 }

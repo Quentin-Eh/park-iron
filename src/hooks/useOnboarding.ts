@@ -122,13 +122,22 @@ export function useOnboarding(
   const accept = useCallback(async () => {
     if (!state.generatedProgram) return;
 
+    // Generated programs come from the edge function and may be missing the
+    // multi-program fields added in schema v5. Normalise so they behave as a
+    // customized weekly rest-pause program.
+    const normalised: Program = {
+      ...state.generatedProgram,
+      id: state.generatedProgram.id ?? DEFAULT_PROGRAM.id,
+      scheduleMode: state.generatedProgram.scheduleMode ?? 'weekly',
+    };
+
     if (userId) {
-      await SyncedStore.saveProgram(userId, state.generatedProgram);
+      await SyncedStore.saveProgram(userId, normalised);
     } else {
-      DataStore.saveProgram(state.generatedProgram);
+      DataStore.saveProgram(normalised);
     }
 
-    onComplete(state.generatedProgram);
+    onComplete(normalised);
   }, [state.generatedProgram, userId, onComplete]);
 
   const regenerate = useCallback(() => {

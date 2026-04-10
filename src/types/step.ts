@@ -9,4 +9,7 @@ export interface Step {
   sectionLabel: string;
   isUnilateral: boolean;
   isRestPause: boolean;
+  isWarmup?: boolean;
+  isSuperset?: boolean;
+  supersetPosition?: 'first' | 'second'; // position within a superset pair
 }

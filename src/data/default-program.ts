@@ -1,12 +1,14 @@
 import type { Program } from '../types/program.ts';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const DEFAULT_PROGRAM: Program = {
+  id: "rest-pause-v4",
   schemaVersion: SCHEMA_VERSION,
   version: "4.0.0",
   name: "Park Iron — Rest-Pause",
   description: "4-day upper/lower, rest-pause training",
+  scheduleMode: "weekly",
   schedule: [
     { dayKey: "UA", weekday: 1 },
     { dayKey: "LA", weekday: 2 },
